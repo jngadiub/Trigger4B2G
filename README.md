@@ -28,6 +28,8 @@ Clone the repository:
 
 ```bash
 cd $CMSSW_BASE/src
+mkdir TrigAnalyzer
+cd TrigAnalyzer
 git clone https://github.com/lbenato/Trigger4B2G.git
 ```
 
