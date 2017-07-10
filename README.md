@@ -1,13 +1,14 @@
 # Trigger4B2G
 First tentative super-simplified ntuplizer to run super-easy trigger studies on 2017 early data
 
-## Git instructions
-# Prerequisites
+## Git prerequisites
 git account
+
 git environment set
 
-# Git instructions
-In your working area, first set up the CMSSW release:
+## Git instructions
+
+In your working area, first set up the CMSSW release and initialize git:
 ```bash
 cmsrel CMSSW_9_2_2
 cd CMSSW_9_2_2/src
@@ -15,13 +16,14 @@ cmsenv
 git cms-init
 ```
 
-# Clone-compile-run
-Clone:
+Clone the repository:
 
 ```bash
 cd $CMSSW_BASE/src
 git clone https://github.com/lbenato/Trigger4B2G.git
 ```
+
+## Compile and Run
 
 Compile:
 ```bash
@@ -34,5 +36,5 @@ Run:
 cmsRun python/ConfFile_cfg.py
 ```
 
-# CRAB
+## CRAB
 There is also a simple crabConfigTrig.py configuration file.
