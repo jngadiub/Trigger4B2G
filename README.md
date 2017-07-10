@@ -3,11 +3,11 @@ First tentative super-simplified ntuplizer to run super-easy trigger studies on 
 
 ## Notes on trigger studies
 ### 11 july
-* 2017 data are new, hence we don't have POG blessed objects.
-* Getting muon ID from miniAOD is straightforward, jet ID a bit more difficult (but done), electron ID still work in progress.
-* JSON file used so far is DCS only.
-* Global Tag is the proper one for PromptReco.
-* TrigAnalyzer.cc so far calculates MET trigger efficinecies on single muon dataset.
+* 2017 data are new, hence we don't have POG blessed objects or recipes yet. We are going to read them from plain miniAOD.
+* Getting muon ID from miniAOD is straightforward, jet ID a bit more difficult (but done), electron ID still work in progress (old 8XX recipes don't work anymore).
+* JSON file used so far is DCS only (as suggested by DQM experts).
+* Global Tag is the proper one for PromptReco (taken from PPD twiki).
+* TrigAnalyzer.cc so far calculates MET trigger efficiencies on single muon dataset.
 
 ## Git prerequisites
 git account
