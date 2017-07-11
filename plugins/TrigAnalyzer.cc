@@ -89,7 +89,7 @@ class TrigAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     long int EventNumber, LumiNumber, RunNumber;
     float muon1_pt, muon1_pfIso04, electron1_pt, fatjet1_pt, jet1_pt;
     float met_pt, met_pt_nomu_L, met_pt_nomu_T, m_ht, min_met_mht, min_met_mht_nomu_L, min_met_mht_nomu_T, met_phi, met_phi_nomu_L, met_phi_nomu_T;
-    bool fatjet1_isloose, fatjet1_istight;
+    bool fatjet1_isLoose, fatjet1_isTight, muon1_isLoose, muon1_isTight;
     long int nTightMuons, nTightElectrons, nTightFatJets, nLooseMuons, nLooseElectrons, nLooseFatJets, nLooseJets, nTightJets;
     bool   trig_bit_pfmet110_pfmht110;
     bool   trig_bit_pfmet120_pfmht120;
@@ -157,9 +157,13 @@ TrigAnalyzer::TrigAnalyzer(const edm::ParameterSet& iConfig)
     tree -> Branch("nTightFatJets" , &nTightFatJets , "nTightFatJets/L");
     tree -> Branch("nTightJets" , &nTightJets , "nTightJets/L");
     tree -> Branch("Muon1_pt", &muon1_pt, "Muon1_pt/F");
+    tree -> Branch("Muon1_isLoose", &muon1_isLoose, "Muon1_isLoose/B");
+    tree -> Branch("Muon1_isTight", &muon1_isTight, "Muon1_isTight/B");
     tree -> Branch("Muon1_pfIso04", &muon1_pfIso04, "Muon1_pfIso04/F");
     tree -> Branch("Electron1_pt", &electron1_pt, "Electron1_pt/F");
     tree -> Branch("FatJet1_pt", &fatjet1_pt, "FatJet1_pt/F");
+    tree -> Branch("FatJet1_isLoose", &fatjet1_isLoose, "FatJet1_isLoose/B");
+    tree -> Branch("FatJet1_isTight", &fatjet1_isTight, "FatJet1_isTight/B");
     tree -> Branch("Jet1_pt", &jet1_pt, "Jet1_pt/F");
     tree -> Branch("MEt_pt", &met_pt, "MEt_pt/F");
     tree -> Branch("MEt_phi", &met_phi, "MEt_phi/F");
@@ -222,6 +226,7 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     muon1_pt = 0.;
     muon1_pfIso04 = -1.;
     electron1_pt = 0.;
+    muon1_isLoose = muon1_isTight = fatjet1_isLoose = fatjet1_isTight = false;
     met_pt = met_pt_nomu_L = met_pt_nomu_T = m_ht = min_met_mht = min_met_mht_nomu_L = min_met_mht_nomu_T = 0.;
     met_phi = met_phi_nomu_L = met_phi_nomu_T = -10.;
 
@@ -261,6 +266,9 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     LumiNumber = iEvent.luminosityBlock();
     RunNumber = iEvent.id().run();
 
+    //Initialize met no mu
+    float met_pt_nomu_x_L(0.), met_pt_nomu_y_L(0.), met_pt_nomu_x_T(0.), met_pt_nomu_y_T(0.);
+
     //Vertices
     edm::Handle<reco::VertexCollection> VertexColl;
     iEvent.getByToken( vertexToken, VertexColl);
@@ -272,6 +280,8 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     pat::MET met = MetColl->front();
     met_pt = met.pt();
     met_phi = met.phi();
+    met_pt_nomu_x_L = met_pt_nomu_x_T = met.px();//before summing up muons
+    met_pt_nomu_y_L = met_pt_nomu_y_T = met.py();//before summing up muons
 
     //Loop on AK8 jets
     edm::Handle<pat::JetCollection> fatjets;
@@ -281,12 +291,14 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     for(std::vector<pat::Jet>::const_iterator it=fatjets->begin(); it!=fatjets->end(); it++) {
         pat::Jet f=*it;
 	if ( !isLooseJet(f) ) continue;
+	fatjet1_isLoose = true;
         if ( f.pt() < 170 ) continue;
         if ( fabs( f.eta() ) > 2.5 ) continue;
 	nLooseFatJets++;
-	if ( !isTightJet(f) ) continue;
-	nTightFatJets++;
 	fatjet1_pt = f.pt();
+	if ( !isTightJet(f) ) continue;
+	fatjet1_isTight = true;
+	nTightFatJets++;
 	FatJetVect.push_back(f);
     }
 
@@ -320,7 +332,6 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     iEvent.getByToken( muonToken, muons );
     std::vector<pat::Muon> MuonVect;
 
-    float met_pt_nomu_x_L(0.), met_pt_nomu_y_L(0.), met_pt_nomu_x_T(0.), met_pt_nomu_y_T(0.);
 
     //for ( const pat::Muon &m : *muons) {
     for(std::vector<pat::Muon>::const_iterator it=muons->begin(); it!=muons->end(); it++) {
@@ -328,6 +339,7 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         if ( m.pt() < 30 ) continue;
         if ( fabs( m.eta() ) > 2.4 ) continue;
 	if (!m.isLooseMuon()) continue;
+        muon1_isLoose = true;
 	float pfIso04 = (m.pfIsolationR04().sumChargedHadronPt + std::max(m.pfIsolationR04().sumNeutralHadronEt + m.pfIsolationR04().sumPhotonEt - 0.5*m.pfIsolationR04().sumPUPt, 0.) ) / m.pt();
         if (pfIso04>0.25) continue; //at least loose isolation
         met_pt_nomu_x_L += m.px();
@@ -335,11 +347,12 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	nLooseMuons++;
         //muon1_isLoose = true;
 	if (!m.isTightMuon(*vertex)) continue;
+        muon1_isTight = true;
         met_pt_nomu_x_T += m.px();
         met_pt_nomu_y_T += m.py();
 	nTightMuons++;
         //muon1_isTight = true;
-	muon1_pt = m.pt();
+ 	muon1_pt = m.pt();
         muon1_pfIso04 = pfIso04;
 	MuonVect.push_back(m);
     } // loop over muons, saving only tight muons
