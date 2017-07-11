@@ -66,7 +66,7 @@ print 'GlobalTag loaded: ', GT
 
 # JSON filter
 import FWCore.PythonUtilities.LumiList as LumiList
-jsonName = "json_DCSONLY"
+jsonName = "Cert_13TeV_2017_HCAL_DCS_GOOD"
 process.source.lumisToProcess = LumiList.LumiList(filename = 'data/JSON/'+jsonName+'.txt').getVLuminosityBlockRange() #36.814 fb-1, ReReco Moriond
 print "JSON file loaded: ", jsonName
 
