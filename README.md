@@ -49,7 +49,8 @@ cmsRun python/ConfFile_cfg.py
 ## CRAB
 There is also a simple crabConfigTrig.py configuration file.
 
-If you want to add togeteher CRAB output files:
+If you want to add together CRAB output files:
 ```bash
-python utils/hadd_CRAB_outputs.py crab_projects_trigger #argument: name of the crab project folder
+python utils/hadd_CRAB_outputs.py crab_projects_trigger
+#argument: name of the crab projects folder
 ```
