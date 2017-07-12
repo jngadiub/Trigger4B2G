@@ -88,13 +88,17 @@ class TrigAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     bool isMC;
     long int EventNumber, LumiNumber, RunNumber;
     float muon1_pt, muon1_pfIso04, electron1_pt, fatjet1_pt, jet1_pt;
-    float met_pt, met_pt_nomu_L, met_pt_nomu_T, m_ht, min_met_mht, min_met_mht_nomu_L, min_met_mht_nomu_T, met_phi, met_phi_nomu_L, met_phi_nomu_T;
+    float met_pt, met_pt_nomu_L, met_pt_nomu_T, m_ht, m_ht_nomu_L, m_ht_nomu_T, min_met_mht, min_met_mht_nomu_L, min_met_mht_nomu_T, met_phi, met_phi_nomu_L, met_phi_nomu_T;
     bool fatjet1_isLoose, fatjet1_isTight, muon1_isLoose, muon1_isTight;
     long int nTightMuons, nTightElectrons, nTightFatJets, nLooseMuons, nLooseElectrons, nLooseFatJets, nLooseJets, nTightJets;
     bool   trig_bit_pfmet110_pfmht110;
     bool   trig_bit_pfmet120_pfmht120;
     bool   trig_bit_pfmet130_pfmht130;
     bool   trig_bit_pfmet140_pfmht140;
+    bool   trig_bit_pfmetTypeOne110_pfmht110;
+    bool   trig_bit_pfmetTypeOne120_pfmht120;
+    bool   trig_bit_pfmetTypeOne130_pfmht130;
+    bool   trig_bit_pfmetTypeOne140_pfmht140;
     bool   trig_bit_pfmetnomu110_pfmhtnomu110;
     bool   trig_bit_pfmetnomu120_pfmhtnomu120;
     bool   trig_bit_pfmetnomu130_pfmhtnomu130;
@@ -168,6 +172,8 @@ TrigAnalyzer::TrigAnalyzer(const edm::ParameterSet& iConfig)
     tree -> Branch("MEt_pt", &met_pt, "MEt_pt/F");
     tree -> Branch("MEt_phi", &met_phi, "MEt_phi/F");
     tree -> Branch("m_ht", &m_ht, "m_ht/F");
+    tree -> Branch("m_ht_nomu_L", &m_ht_nomu_L, "m_ht_nomu_L/F");
+    tree -> Branch("m_ht_nomu_T", &m_ht_nomu_T, "m_ht_nomu_T/F");
     tree -> Branch("min_met_mht", &min_met_mht, "min_met_mht/F");
     tree -> Branch("met_pt_nomu_L", &met_pt_nomu_L, "met_pt_nomu_L/F");
     tree -> Branch("met_pt_nomu_T", &met_pt_nomu_T, "met_pt_nomu_T/F");
@@ -177,6 +183,10 @@ TrigAnalyzer::TrigAnalyzer(const edm::ParameterSet& iConfig)
     tree -> Branch("HLT_PFMET120_PFMHT120_IDTight_v", &trig_bit_pfmet120_pfmht120, "HLT_PFMET120_PFMHT120_IDTight_v/B");
     tree -> Branch("HLT_PFMET130_PFMHT130_IDTight_v", &trig_bit_pfmet130_pfmht130, "HLT_PFMET130_PFMHT130_IDTight_v/B");
     tree -> Branch("HLT_PFMET140_PFMHT140_IDTight_v", &trig_bit_pfmet140_pfmht140, "HLT_PFMET140_PFMHT140_IDTight_v/B");
+    tree -> Branch("HLT_PFMETTypeOne110_PFMHT110_IDTight_v", &trig_bit_pfmetTypeOne110_pfmht110, "HLT_PFMETTypeOne110_PFMHT110_IDTight_v/B");
+    tree -> Branch("HLT_PFMETTypeOne120_PFMHT120_IDTight_v", &trig_bit_pfmetTypeOne120_pfmht120, "HLT_PFMETTypeOne120_PFMHT120_IDTight_v/B");
+    tree -> Branch("HLT_PFMETTypeOne130_PFMHT130_IDTight_v", &trig_bit_pfmetTypeOne130_pfmht130, "HLT_PFMETTypeOne130_PFMHT130_IDTight_v/B");
+    tree -> Branch("HLT_PFMETTypeOne140_PFMHT140_IDTight_v", &trig_bit_pfmetTypeOne140_pfmht140, "HLT_PFMETTypeOne140_PFMHT140_IDTight_v/B");
     tree -> Branch("HLT_PFMETNoMu110_PFMHTNoMu110_IDTight_v", &trig_bit_pfmetnomu110_pfmhtnomu110, "HLT_PFMETNoMu110_PFMHTNoMu110_IDTight_v/B");
     tree -> Branch("HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_v", &trig_bit_pfmetnomu120_pfmhtnomu120, "HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_v/B");
     tree -> Branch("HLT_PFMETNoMu130_PFMHTNoMu130_IDTight_v", &trig_bit_pfmetnomu130_pfmhtnomu130, "HLT_PFMETNoMu130_PFMHTNoMu130_IDTight_v/B");
@@ -216,6 +226,10 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     trig_bit_pfmet120_pfmht120 = false;
     trig_bit_pfmet130_pfmht130 = false;
     trig_bit_pfmet140_pfmht140 = false;
+    trig_bit_pfmetTypeOne110_pfmht110 = false;
+    trig_bit_pfmetTypeOne120_pfmht120 = false;
+    trig_bit_pfmetTypeOne130_pfmht130 = false;
+    trig_bit_pfmetTypeOne140_pfmht140 = false;
     trig_bit_pfmetnomu110_pfmhtnomu110 = false;
     trig_bit_pfmetnomu120_pfmhtnomu120 = false;
     trig_bit_pfmetnomu130_pfmhtnomu130 = false;
@@ -227,7 +241,7 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     muon1_pfIso04 = -1.;
     electron1_pt = 0.;
     muon1_isLoose = muon1_isTight = fatjet1_isLoose = fatjet1_isTight = false;
-    met_pt = met_pt_nomu_L = met_pt_nomu_T = m_ht = min_met_mht = min_met_mht_nomu_L = min_met_mht_nomu_T = 0.;
+    met_pt = met_pt_nomu_L = met_pt_nomu_T = m_ht = m_ht_nomu_L = m_ht_nomu_T = min_met_mht = min_met_mht_nomu_L = min_met_mht_nomu_T = 0.;
     met_phi = met_phi_nomu_L = met_phi_nomu_T = -10.;
 
 
@@ -247,6 +261,11 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
               if ( TrigPath.Contains("HLT_PFMET120_PFMHT120_IDTight_v") ) trig_bit_pfmet120_pfmht120 = true;
               if ( TrigPath.Contains("HLT_PFMET130_PFMHT130_IDTight_v") ) trig_bit_pfmet130_pfmht130 = true;
               if ( TrigPath.Contains("HLT_PFMET140_PFMHT140_IDTight_v") ) trig_bit_pfmet140_pfmht140 = true;
+
+              if ( TrigPath.Contains("HLT_PFMETTypeOne110_PFMHT110_IDTight_v") ) trig_bit_pfmetTypeOne110_pfmht110 = true;
+              if ( TrigPath.Contains("HLT_PFMETTypeOne120_PFMHT120_IDTight_v") ) trig_bit_pfmetTypeOne120_pfmht120 = true;
+              if ( TrigPath.Contains("HLT_PFMETTypeOne130_PFMHT130_IDTight_v") ) trig_bit_pfmetTypeOne130_pfmht130 = true;
+              if ( TrigPath.Contains("HLT_PFMETTypeOne140_PFMHT140_IDTight_v") ) trig_bit_pfmetTypeOne140_pfmht140 = true;
 
               if ( TrigPath.Contains("HLT_PFMETNoMu110_PFMHTNoMu110_IDTight_v") ) trig_bit_pfmetnomu110_pfmhtnomu110 = true;
               if ( TrigPath.Contains("HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_v") ) trig_bit_pfmetnomu120_pfmhtnomu120 = true;
@@ -317,11 +336,15 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	JetVect.push_back(j);
     }
 
-    float m_ht_x(0.), m_ht_y(0.);
+    float m_ht_x(0.), m_ht_y(0.), m_ht_nomu_x_L(0.), m_ht_nomu_y_L(0.), m_ht_nomu_x_T(0.), m_ht_nomu_y_T(0.);
     
     for(unsigned int a=0; a<JetVect.size(); a++){
-        m_ht_x += JetVect.at(a).px();
-        m_ht_y += JetVect.at(a).py();
+        m_ht_x -= JetVect.at(a).px();
+        m_ht_y -= JetVect.at(a).py();
+        m_ht_nomu_x_L -= JetVect.at(a).px();
+        m_ht_nomu_y_L -= JetVect.at(a).py();
+        m_ht_nomu_x_T -= JetVect.at(a).px();
+        m_ht_nomu_y_T -= JetVect.at(a).py();
     }
     
     m_ht = sqrt( pow(m_ht_x,2) + pow(m_ht_y,2)  );
@@ -344,12 +367,16 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         if (pfIso04>0.25) continue; //at least loose isolation
         met_pt_nomu_x_L += m.px();
         met_pt_nomu_y_L += m.py();
+	m_ht_nomu_x_L += m.px();
+	m_ht_nomu_y_L += m.py();
 	nLooseMuons++;
         //muon1_isLoose = true;
 	if (!m.isTightMuon(*vertex)) continue;
         muon1_isTight = true;
         met_pt_nomu_x_T += m.px();
         met_pt_nomu_y_T += m.py();
+	m_ht_nomu_x_T += m.px();
+	m_ht_nomu_y_T += m.py();
 	nTightMuons++;
         //muon1_isTight = true;
  	muon1_pt = m.pt();
@@ -359,8 +386,10 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     met_pt_nomu_L = sqrt( pow(met_pt_nomu_x_L,2) + pow(met_pt_nomu_y_L,2) );
     met_pt_nomu_T = sqrt( pow(met_pt_nomu_x_T,2) + pow(met_pt_nomu_y_T,2) );
-    min_met_mht_nomu_L = std::min(met_pt_nomu_L,m_ht);
-    min_met_mht_nomu_T = std::min(met_pt_nomu_T,m_ht);
+    m_ht_nomu_L = sqrt( pow(m_ht_nomu_x_L,2) + pow(m_ht_nomu_y_L,2)  );
+    m_ht_nomu_T = sqrt( pow(m_ht_nomu_x_T,2) + pow(m_ht_nomu_y_T,2)  );
+    min_met_mht_nomu_L = std::min(met_pt_nomu_L,m_ht_nomu_L);
+    min_met_mht_nomu_T = std::min(met_pt_nomu_T,m_ht_nomu_T);
 
 
     //Loop on electrons ---> fix, missing Electron IDs
