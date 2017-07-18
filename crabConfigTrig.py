@@ -2,7 +2,7 @@ from CRABClient.UserUtilities import config, getUsernameFromSiteDB
 import os
 config = config()
 
-config.General.workArea = 'crab_projects_trigger'
+config.General.workArea = 'crab_projects_trigger_sel3_GOLDJSON'
 config.General.transferOutputs = True
 config.General.transferLogs = True
 
@@ -10,21 +10,21 @@ config.JobType.pluginName = 'Analysis'
 config.JobType.psetName = 'python/ConfFile_cfg.py'
 config.JobType.inputFiles = ['data']
 
-config.General.requestName = 'SingleMuon_Run2017A-PromptReco-v2'
-config.Data.inputDataset = '/SingleMuon/Run2017A-PromptReco-v2/MINIAOD'
+#config.General.requestName = 'SingleMuon_Run2017A-PromptReco-v2'
+#config.Data.inputDataset = '/SingleMuon/Run2017A-PromptReco-v2/MINIAOD'
 #config.General.requestName = 'SingleMuon_Run2017A-PromptReco-v3'
 #config.Data.inputDataset = '/SingleMuon/Run2017A-PromptReco-v3/MINIAOD'
-#config.General.requestName = 'SingleMuon_Run2017B-PromptReco-v1'
-#config.Data.inputDataset = '/SingleMuon/Run2017B-PromptReco-v1/MINIAOD'
+config.General.requestName = 'SingleMuon_Run2017B-PromptReco-v1'
+config.Data.inputDataset = '/SingleMuon/Run2017B-PromptReco-v1/MINIAOD'
 
 config.Data.inputDBS = 'global'
 config.Data.splitting = 'LumiBased'#if Data
 #config.Data.splitting = 'FileBased'#if MC
 
 #if DATA:
-config.Data.lumiMask = 'data/JSON/Cert_13TeV_2017_HCAL_DCS_GOOD.txt'
+config.Data.lumiMask = 'data/JSON/Cert_294927-297723_13TeV_PromptReco_Collisions17_JSON.txt'
 #'https://cms-service-dqm.web.cern.ch/cms-service-dqm/CAF/certification/Collisions16/13TeV/ReReco/Final/Cert_271036-284044_13TeV_23Sep2016ReReco_Collisions16_JSON.txt'#proper way to link a json file from DQM certification
-config.Data.unitsPerJob = 30
+config.Data.unitsPerJob = 35
 
 #If storing in T2
 #config.Data.outLFNDirBase = '/store/user/lbenato/MET_trigger'

@@ -42,11 +42,13 @@
 #include "DataFormats/PatCandidates/interface/Jet.h"
 #include "DataFormats/PatCandidates/interface/Muon.h"
 #include "DataFormats/PatCandidates/interface/Electron.h"
+#include "RecoEgamma/EgammaTools/interface/ConversionTools.h"
+#include "DataFormats/BeamSpot/interface/BeamSpot.h"
 
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "TTree.h"
-
+#include <string>
 //#include "TrigAnalyzer.h"
 //
 // class declaration
@@ -72,6 +74,7 @@ class TrigAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
       virtual void beginJob() override;
       virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
       virtual void endJob() override;
+      bool passIDWP(std::string, bool, float, float, float, float, float, float, float, bool, int);
 
       // ----------member data ---------------------------
     edm::EDGetTokenT<edm::TriggerResults> trigResultsToken;
@@ -292,6 +295,11 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     edm::Handle<reco::VertexCollection> VertexColl;
     iEvent.getByToken( vertexToken, VertexColl);
     const reco::Vertex* vertex=&VertexColl->front();
+    reco::TrackBase::Point vtxPoint(0,0,0);
+    if(  VertexColl->size() >= 1 ) {
+        vtxPoint = VertexColl->at(0).position();
+    }
+
 
     //Loop on MET
     edm::Handle<pat::METCollection> MetColl;
@@ -305,7 +313,7 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     //Loop on AK8 jets
     edm::Handle<pat::JetCollection> fatjets;
     iEvent.getByToken( fatjetToken, fatjets );
-    std::vector<pat::Jet> FatJetVect;
+    //std::vector<pat::Jet> FatJetVect;
 
     for(std::vector<pat::Jet>::const_iterator it=fatjets->begin(); it!=fatjets->end(); it++) {
         pat::Jet f=*it;
@@ -318,7 +326,7 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	if ( !isTightJet(f) ) continue;
 	fatjet1_isTight = true;
 	nTightFatJets++;
-	FatJetVect.push_back(f);
+	//FatJetVect.push_back(f);
     }
 
     //Loop on AK4 jets
@@ -329,7 +337,7 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     for(std::vector<pat::Jet>::const_iterator it=jets->begin(); it!=jets->end(); it++) {
         pat::Jet j=*it;
 	if ( !isLooseJet(j) ) continue;
-        if ( j.pt() < 30 ) continue;
+        if ( j.pt() < 30 ) continue;//this causes a jump at ~30? investigate!
         if ( fabs( j.eta() ) > 2.5 ) continue;
         nLooseJets++;
 	jet1_pt = j.pt();
@@ -353,18 +361,18 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     //Loop on muons ---> fix
     edm::Handle<pat::MuonCollection> muons;
     iEvent.getByToken( muonToken, muons );
-    std::vector<pat::Muon> MuonVect;
+    //std::vector<pat::Muon> MuonVect;
 
 
     //for ( const pat::Muon &m : *muons) {
     for(std::vector<pat::Muon>::const_iterator it=muons->begin(); it!=muons->end(); it++) {
         pat::Muon m=*it;
-        if ( m.pt() < 30 ) continue;
-        if ( fabs( m.eta() ) > 2.4 ) continue;
+        //if ( m.pt() < 30 ) continue; //this causes a jump at ~30 GeV, investigate
+        if ( fabs( m.eta() ) > 2.4 ) continue; //this selection is necessary
 	if (!m.isLooseMuon()) continue;
         muon1_isLoose = true;
 	float pfIso04 = (m.pfIsolationR04().sumChargedHadronPt + std::max(m.pfIsolationR04().sumNeutralHadronEt + m.pfIsolationR04().sumPhotonEt - 0.5*m.pfIsolationR04().sumPUPt, 0.) ) / m.pt();
-        if (pfIso04>0.25) continue; //at least loose isolation
+        //if (pfIso04>0.25) continue; //at least loose isolation: try to drop
         met_pt_nomu_x_L += m.px();
         met_pt_nomu_y_L += m.py();
 	m_ht_nomu_x_L += m.px();
@@ -381,7 +389,7 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         //muon1_isTight = true;
  	muon1_pt = m.pt();
         muon1_pfIso04 = pfIso04;
-	MuonVect.push_back(m);
+	//MuonVect.push_back(m);
     } // loop over muons, saving only tight muons
 
     met_pt_nomu_L = sqrt( pow(met_pt_nomu_x_L,2) + pow(met_pt_nomu_y_L,2) );
@@ -393,19 +401,63 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 
     //Loop on electrons ---> fix, missing Electron IDs
-    /*
+    
+    edm::InputTag convLabel = edm::InputTag("reducedEgamma:reducedConversions");
+    edm::Handle<reco::ConversionCollection> conversions;
+    iEvent.getByLabel( convLabel, conversions );
+
+    //edm::InputTag bsLabel = edm::InputTag("offlineBeamSpot");
+    //edm::Handle<reco::BeamSpot> bsHandle;
+    //iEvent.getByLabel( bsLabel, bsHandle );
+    //const reco::BeamSpot &beamspot = *bsHandle.product();
+
     edm::Handle<pat::ElectronCollection> electrons;
     iEvent.getByToken( electronToken, electrons );
-    std::vector<pat::Electron> ElectronVect;
+    //std::vector<pat::Electron> ElectronVect;
     for(std::vector<pat::Electron>::const_iterator it=electrons->begin(); it!=electrons->end(); it++) {
         pat::Electron e=*it;
+	/*
+	GsfElectron::PflowIsolationVariables pfIso = e.pfIsolationVariables();
+	bool isEB = e.isEB() ? true : false;
+	float dEtaIn = e.deltaEtaSuperClusterTrackAtVtx();
+	float dPhiIn = e.deltaPhiSuperClusterTrackAtVtx();
+	float full5x5 = e.full5x5_sigmaIetaIeta();
+	float hoe = e.hadronicOverEm();
+	float absiso = pfIso.sumChargedHadronPt + max(0.0 , pfIso.sumNeutralHadronEt + pfIso.sumPhotonEt - 0.5 * pfIso.sumPUPt );
+	float relIsoWithDBeta_ = absiso/e.pt();
+	float ooEmooP_; 
+	if( e.ecalEnergy() == 0 ){
+	    printf("Electron energy is zero!\n");
+	    ooEmooP_ = 999;
+	}
+        else if( !std::isfinite(e.ecalEnergy())){
+	    printf("Electron energy is not finite!\n");
+	    ooEmooP_ = 998;
+	}
+        else{
+	    ooEmooP_ = fabs(1.0/e.ecalEnergy() - e.eSuperClusterOverP()/e.ecalEnergy() );
+	}
+	std::cout << ooEmooP_ << std::endl;
+	float d0 = (-1) * e.gsfTrack()->dxy(vtxPoint);
+	float dz = e.gsfTrack()->dz(vtxPoint);
+	float missHits = e.gsfTrack()->hitPattern().numberOfLostTrackerHits(HitPattern::MISSING_INNER_HITS);
+	bool hasMatchConv = ConversionTools::hasMatchedConversion(e, conversions, beamspot.position());
+	bool isVeto = passIDWP("VETO",isEB, dEtaIn, dPhiIn, full5x5, hoe, d0, dz, ooEmooP_, hasMatchConv, missHits);
+	bool isLoose = passIDWP("LOOSE",isEB, dEtaIn, dPhiIn, full5x5, hoe, d0, dz, ooEmooP_, hasMatchConv, missHits);
+	bool isMedium = passIDWP("MEDIUM",isEB, dEtaIn, dPhiIn, full5x5, hoe, d0, dz, ooEmooP_, hasMatchConv, missHits);
+	bool isTight = passIDWP("TIGHT",isEB, dEtaIn, dPhiIn, full5x5, hoe, d0, dz, ooEmooP_, hasMatchConv, missHits);
+	// Look up the ID decision for this electron in 	
+	if ( isLoose ) {
+  	    std::cout << "LOOSE ele" << std::endl;
+	}
+        */
         if ( e.pt() < 30 ) continue;
         if ( fabs( e.eta() ) > 2.5 ) continue;
-	std::cout << "Electron pt: " << e.pt() << std::endl;
+	//std::cout << "Electron pt: " << e.pt() << std::endl;
 	electron1_pt = e.pt();
-	ElectronVect.push_back(e);
-    } // loop over muons
-    */
+	//ElectronVect.push_back(e);
+    } // loop over electrons
+    
     tree -> Fill();
 
 
@@ -486,6 +538,48 @@ bool TrigAnalyzer::isTightJet(pat::Jet& jet){
 
     return true;
 }
+
+
+bool TrigAnalyzer::passIDWP(std::string WP, bool isEB, float dEtaIn, float dPhiIn, float full5x5, float hoe, float d0, float dz, float ooemoop, bool conv, int missHits){
+  bool pass = false;
+
+  if(WP == "VETO"){
+    if(isEB){
+      pass = (fabs(dEtaIn) <  0.0126 ) && (fabs(dPhiIn) <  0.107 ) && (full5x5 < 0.012 ) && (hoe <  0.186 ) && (fabs(d0) < 0.0621 ) && (fabs(dz) <  0.613 ) && (fabs(ooemoop) <  0.239 ) && !conv && (missHits <= 2);
+    }
+    else{
+      pass = (fabs(dEtaIn) <  0.0109 ) && (fabs(dPhiIn) <  0.219 ) && (full5x5 < 0.0339 ) && (hoe <  0.0962 ) && (fabs(d0) < 0.279 ) && (fabs(dz) < 0.947 ) && (fabs(ooemoop) < 0.141 ) && !conv && (missHits <= 3);
+    }
+  }
+  if(WP == "LOOSE"){
+    if(isEB){
+      pass = (fabs(dEtaIn) < 0.00976 ) && (fabs(dPhiIn) < 0.0929 ) && (full5x5 <  0.0105 ) && (hoe < 0.0765 ) && (fabs(d0) < 0.0227 ) && (fabs(dz) < 0.379 ) && (fabs(ooemoop) <  0.184 ) && !conv && (missHits <= 2);
+    }
+    else{
+      pass = (fabs(dEtaIn) < 0.00952 ) && (fabs(dPhiIn) < 0.181 ) && (full5x5 < 0.0318 ) && (hoe < 0.0824 ) && (fabs(d0) < 0.242 ) && (fabs(dz) < 0.921 ) && (fabs(ooemoop) < 0.125 ) && !conv && (missHits <= 1);
+    }
+  }
+
+  if(WP == "MEDIUM"){
+    if(isEB){
+      pass = (fabs(dEtaIn) <  0.0094 ) && (fabs(dPhiIn) <  0.0296 ) && (full5x5 <  0.0101 ) && (hoe <  0.0372 ) && (fabs(d0) <  0.0151 ) && (fabs(dz) <  0.238 ) && (fabs(ooemoop) <  0.118 ) && !conv && (missHits <= 2);
+    }
+    else{
+      pass = (fabs(dEtaIn) <  0.00773 ) && (fabs(dPhiIn) <  0.148 ) && (full5x5 <  0.0287 ) && (hoe <  0.0546 ) && (fabs(d0) <  0.0535 ) && (fabs(dz) <  0.572 ) && (fabs(ooemoop) <  0.104 ) && !conv && (missHits <= 1);
+    }
+  }
+
+  if(WP == "TIGHT"){
+    if(isEB){
+      pass = (fabs(dEtaIn) <  0.0095 ) && (fabs(dPhiIn) <  0.0291 ) && (full5x5 <  0.0101 ) && (hoe <  0.0372 ) && (fabs(d0) <  0.0144 ) && (fabs(dz) <  0.323 ) && (fabs(ooemoop) <  0.0174 ) && !conv && (missHits <= 2);
+    }
+    else{
+      pass = (fabs(dEtaIn) <  0.00762 ) && (fabs(dPhiIn) <  0.0439 ) && (full5x5 <  0.0287 ) && (hoe <  0.0544 ) && (fabs(d0) <  0.0377 ) && (fabs(dz) <  0.571 ) && (fabs(ooemoop) <  0.01 ) && !conv && (missHits <= 1);
+    }
+  }
+  return pass;
+}
+
 
 //define this as a plug-in
 DEFINE_FWK_MODULE(TrigAnalyzer);
