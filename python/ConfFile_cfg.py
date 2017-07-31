@@ -16,7 +16,8 @@ process.source = cms.Source("PoolSource",
     # replace 'myfile.root' with the source file you want to use
     fileNames = cms.untracked.vstring(
         #'/store/data/Run2017A/SingleElectron/MINIAOD/PromptReco-v2/000/296/168/00000/9ED74C00-5D4C-E711-9499-02163E01A667.root'
-        '/store/data/Run2017A/SingleMuon/MINIAOD/PromptReco-v2/000/296/168/00000/084C505D-784C-E711-8140-02163E019DA4.root'
+        #'/store/data/Run2017A/SingleMuon/MINIAOD/PromptReco-v2/000/296/168/00000/084C505D-784C-E711-8140-02163E019DA4.root'
+        '/store/data/Run2017B/SingleMuon/MINIAOD/PromptReco-v2/000/298/678/00000/B48DBFCD-A466-E711-A86B-02163E01A456.root'
     )
 )
 
@@ -66,8 +67,8 @@ print 'GlobalTag loaded: ', GT
 
 # JSON filter
 import FWCore.PythonUtilities.LumiList as LumiList
-jsonName = "Cert_294927-297723_13TeV_PromptReco_Collisions17_JSON"
-process.source.lumisToProcess = LumiList.LumiList(filename = 'data/JSON/'+jsonName+'.txt').getVLuminosityBlockRange() #36.814 fb-1, ReReco Moriond
+jsonName = "Cert_294927-299420_13TeV_PromptReco_Collisions17_JSON" #golden json
+process.source.lumisToProcess = LumiList.LumiList(filename = 'data/JSON/'+jsonName+'.txt').getVLuminosityBlockRange()
 print "JSON file loaded: ", jsonName
 
 process.trigger = cms.EDAnalyzer('TrigAnalyzer',
