@@ -8,6 +8,9 @@ First tentative super-simplified ntuplizer to run super-easy trigger studies on 
 * JSON file used so far is DCS only (as suggested by DQM experts).
 * Global Tag is the proper one for PromptReco (taken from PPD twiki).
 * TrigAnalyzer.cc so far calculates MET trigger efficiencies on single muon dataset.
+### 5 september
+* Latest golden JSON files available
+* MET filters being tested
 
 ## Git prerequisites
 git account
