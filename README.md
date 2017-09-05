@@ -18,8 +18,8 @@ git environment set
 
 In your working area, first set up the CMSSW release and initialize git:
 ```bash
-cmsrel CMSSW_9_2_6
-cd CMSSW_9_2_6/src
+cmsrel CMSSW_9_2_10
+cd CMSSW_9_2_10/src
 cmsenv
 git cms-init
 ```
