@@ -2,7 +2,7 @@ from CRABClient.UserUtilities import config, getUsernameFromSiteDB
 import os
 config = config()
 
-config.General.workArea = 'crab_projects_trigger_31july_goldenjson'
+config.General.workArea = 'crab_projects_trigger_1_nov_C'
 config.General.transferOutputs = True
 config.General.transferLogs = True
 
@@ -26,7 +26,9 @@ config.Data.splitting = 'LumiBased'#if Data
 #config.Data.splitting = 'FileBased'#if MC
 
 #if DATA:
-config.Data.lumiMask = 'data/JSON/Cert_294927-299420_13TeV_PromptReco_Collisions17_JSON.txt'#golden json
+config.Data.lumiMask = 'data/JSON/Cert_294927-305364_13TeV_PromptReco_Collisions17_JSON.txt'
+#'Cert_294927-302654_13TeV_PromptReco_Collisions17_JSON.txt'#17.85 fbinv
+#'data/JSON/Cert_294927-302343_13TeV_PromptReco_Collisions17_JSON.txt'#'data/JSON/Cert_294927-301567_13TeV_PromptReco_Collisions17_JSON.txt'#golden json
 #config.Data.lumiMask = 'data/JSON/json_DCSONLY.txt' #DCS only
 
 #older

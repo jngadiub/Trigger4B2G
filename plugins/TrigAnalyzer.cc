@@ -78,6 +78,9 @@ class TrigAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 
       // ----------member data ---------------------------
     edm::EDGetTokenT<edm::TriggerResults> trigResultsToken;
+    edm::EDGetTokenT<edm::TriggerResults> filterResultsToken;
+    edm::EDGetTokenT<bool> badChCandFilterToken;
+    edm::EDGetTokenT<bool> badPFMuonFilterToken;
     edm::EDGetTokenT<pat::METCollection> metToken;
     edm::EDGetTokenT<pat::JetCollection> jetToken;
     edm::EDGetTokenT<pat::JetCollection> fatjetToken;
@@ -89,27 +92,37 @@ class TrigAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     TTree* tree;
     bool isVerbose;
     bool isMC;
-    long int EventNumber, LumiNumber, RunNumber;
+    long int EventNumber, LumiNumber, RunNumber, nPV;
     float muon1_pt, muon1_pfIso04, electron1_pt, fatjet1_pt, jet1_pt;
     float met_pt, met_pt_nomu_L, met_pt_nomu_T, m_ht, m_ht_nomu_L, m_ht_nomu_T, min_met_mht, min_met_mht_nomu_L, min_met_mht_nomu_T, met_phi, met_phi_nomu_L, met_phi_nomu_T;
     bool fatjet1_isLoose, fatjet1_isTight, muon1_isLoose, muon1_isTight;
     long int nTightMuons, nTightElectrons, nTightFatJets, nLooseMuons, nLooseElectrons, nLooseFatJets, nLooseJets, nTightJets;
     bool   trig_bit_pfmet110_pfmht110;
     bool   trig_bit_pfmet120_pfmht120;
+    bool   trig_bit_pfmet120_pfmht120_PFHT60;
     bool   trig_bit_pfmet130_pfmht130;
     bool   trig_bit_pfmet140_pfmht140;
     bool   trig_bit_pfmetTypeOne110_pfmht110;
     bool   trig_bit_pfmetTypeOne120_pfmht120;
+    bool   trig_bit_pfmetTypeOne120_pfmht120_PFHT60;
     bool   trig_bit_pfmetTypeOne130_pfmht130;
     bool   trig_bit_pfmetTypeOne140_pfmht140;
     bool   trig_bit_pfmetnomu110_pfmhtnomu110;
     bool   trig_bit_pfmetnomu120_pfmhtnomu120;
+    bool   trig_bit_pfmetnomu120_pfmhtnomu120_PFHT60;
     bool   trig_bit_pfmetnomu130_pfmhtnomu130;
     bool   trig_bit_pfmetnomu140_pfmhtnomu140;
     bool   trig_bit_ele27_wptight_gsf;
     bool   trig_bit_isomu24;
-
-
+    //MET filters
+    bool trig_bit_flag_HBHENoiseFilter;
+    bool trig_bit_flag_HBHENoiseIsoFilter;
+    bool trig_bit_flag_EcalDeadCellTriggerPrimitiveFilter;
+    bool trig_bit_flag_goodVertices;
+    bool trig_bit_flag_eeBadScFilter;
+    bool trig_bit_flag_globalSuperTightHalo2016Filter;
+    bool flag_BadChCand;
+    bool flag_BadPFMuon;
 };
 
 
@@ -131,6 +144,14 @@ TrigAnalyzer::TrigAnalyzer(const edm::ParameterSet& iConfig)
     //Input tags
     edm::InputTag IT_trigResults = edm::InputTag("TriggerResults::HLT");
     trigResultsToken= consumes<edm::TriggerResults>(IT_trigResults);
+    edm::InputTag IT_filterResults = edm::InputTag("TriggerResults::RECO");
+    filterResultsToken= consumes<edm::TriggerResults>(IT_filterResults);
+
+    edm::InputTag IT_badChCandFilter = edm::InputTag("BadChargedCandidateFilter");
+    badChCandFilterToken= consumes<bool>(IT_badChCandFilter);
+    edm::InputTag IT_badPFMuonFilter = edm::InputTag("BadPFMuonFilter");
+    badPFMuonFilterToken= consumes<bool>(IT_badPFMuonFilter);
+
     edm::InputTag IT_met = edm::InputTag("slimmedMETs");
     metToken = consumes<pat::METCollection>(IT_met);
     edm::InputTag IT_jets = edm::InputTag("slimmedJets");
@@ -155,6 +176,7 @@ TrigAnalyzer::TrigAnalyzer(const edm::ParameterSet& iConfig)
     tree -> Branch("EventNumber" , &EventNumber , "EventNumber/L");
     tree -> Branch("LumiNumber" , &LumiNumber , "LumiNumber/L");
     tree -> Branch("RunNumber" , &RunNumber , "RunNumber/L");
+    tree -> Branch("nPV" , &nPV , "nPV/L");
     tree -> Branch("nLooseMuons" , &nLooseMuons , "nLooseMuons/L");
     tree -> Branch("nLooseElectrons" , &nLooseElectrons , "nLooseElectrons/L");
     tree -> Branch("nLooseFatJets" , &nLooseFatJets , "nLooseFatJets/L");
@@ -184,18 +206,29 @@ TrigAnalyzer::TrigAnalyzer(const edm::ParameterSet& iConfig)
     tree -> Branch("min_met_mht_nomu_T", &min_met_mht_nomu_T, "min_met_mht_nomu_T/F");
     tree -> Branch("HLT_PFMET110_PFMHT110_IDTight_v", &trig_bit_pfmet110_pfmht110, "HLT_PFMET110_PFMHT110_IDTight_v/B");
     tree -> Branch("HLT_PFMET120_PFMHT120_IDTight_v", &trig_bit_pfmet120_pfmht120, "HLT_PFMET120_PFMHT120_IDTight_v/B");
+    tree -> Branch("HLT_PFMET120_PFMHT120_IDTight_PFHT60_v", &trig_bit_pfmet120_pfmht120_PFHT60, "HLT_PFMET120_PFMHT120_IDTight_PFHT60_v/B");
     tree -> Branch("HLT_PFMET130_PFMHT130_IDTight_v", &trig_bit_pfmet130_pfmht130, "HLT_PFMET130_PFMHT130_IDTight_v/B");
     tree -> Branch("HLT_PFMET140_PFMHT140_IDTight_v", &trig_bit_pfmet140_pfmht140, "HLT_PFMET140_PFMHT140_IDTight_v/B");
     tree -> Branch("HLT_PFMETTypeOne110_PFMHT110_IDTight_v", &trig_bit_pfmetTypeOne110_pfmht110, "HLT_PFMETTypeOne110_PFMHT110_IDTight_v/B");
     tree -> Branch("HLT_PFMETTypeOne120_PFMHT120_IDTight_v", &trig_bit_pfmetTypeOne120_pfmht120, "HLT_PFMETTypeOne120_PFMHT120_IDTight_v/B");
+    tree -> Branch("HLT_PFMETTypeOne120_PFMHT120_IDTight_PFHT60_v", &trig_bit_pfmetTypeOne120_pfmht120_PFHT60, "HLT_PFMETTypeOne120_PFMHT120_IDTight_PFHT60_v/B");
     tree -> Branch("HLT_PFMETTypeOne130_PFMHT130_IDTight_v", &trig_bit_pfmetTypeOne130_pfmht130, "HLT_PFMETTypeOne130_PFMHT130_IDTight_v/B");
     tree -> Branch("HLT_PFMETTypeOne140_PFMHT140_IDTight_v", &trig_bit_pfmetTypeOne140_pfmht140, "HLT_PFMETTypeOne140_PFMHT140_IDTight_v/B");
     tree -> Branch("HLT_PFMETNoMu110_PFMHTNoMu110_IDTight_v", &trig_bit_pfmetnomu110_pfmhtnomu110, "HLT_PFMETNoMu110_PFMHTNoMu110_IDTight_v/B");
     tree -> Branch("HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_v", &trig_bit_pfmetnomu120_pfmhtnomu120, "HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_v/B");
+    tree -> Branch("HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_PFHT60_v", &trig_bit_pfmetnomu120_pfmhtnomu120_PFHT60, "HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_PFHT60_v/B");
     tree -> Branch("HLT_PFMETNoMu130_PFMHTNoMu130_IDTight_v", &trig_bit_pfmetnomu130_pfmhtnomu130, "HLT_PFMETNoMu130_PFMHTNoMu130_IDTight_v/B");
     tree -> Branch("HLT_PFMETNoMu140_PFMHTNoMu140_IDTight_v", &trig_bit_pfmetnomu140_pfmhtnomu140, "HLT_PFMETNoMu140_PFMHTNoMu140_IDTight_v/B");
     tree -> Branch("HLT_Ele27_WPTight_Gsf_v", &trig_bit_ele27_wptight_gsf, "HLT_Ele27_WPTight_Gsf_v/B");
     tree -> Branch("HLT_IsoMu24_v", &trig_bit_isomu24, "HLT_IsoMu24_v/B");
+    tree -> Branch("Flag_HBHENoiseFilter", &trig_bit_flag_HBHENoiseFilter, "Flag_HBHENoiseFilter/B");
+    tree -> Branch("Flag_HBHENoiseIsoFilter", &trig_bit_flag_HBHENoiseIsoFilter, "Flag_HBHENoiseIsoFilter/B");
+    tree -> Branch("Flag_EcalDeadCellTriggerPrimitiveFilter", &trig_bit_flag_EcalDeadCellTriggerPrimitiveFilter, "Flag_EcalDeadCellTriggerPrimitiveFilter/B");
+    tree -> Branch("Flag_goodVertices", &trig_bit_flag_goodVertices, "Flag_goodVertices/B");
+    tree -> Branch("Flag_eeBadScFilter", &trig_bit_flag_eeBadScFilter, "Flag_eeBadScFilter/B");
+    tree -> Branch("Flag_globalSuperTightHalo2016Filter", &trig_bit_flag_globalSuperTightHalo2016Filter, "Flag_globalSuperTightHalo2016Filter/B");
+    tree -> Branch("Flag_BadChCand", &flag_BadChCand, "Flag_BadChCand/B");
+    tree -> Branch("Flag_BadPFMuon", &flag_BadPFMuon, "Flag_BadPFMuon/B");
 
 }
 
@@ -222,23 +255,32 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     using namespace std;
 
     isMC = false;
-    EventNumber = LumiNumber = RunNumber = 0;
+    EventNumber = LumiNumber = RunNumber = nPV = 0;
     nTightMuons = nTightElectrons = nTightFatJets = nLooseMuons = nLooseElectrons = nLooseFatJets = 0;
 
     trig_bit_pfmet110_pfmht110 = false;
     trig_bit_pfmet120_pfmht120 = false;
+    trig_bit_pfmet120_pfmht120_PFHT60 = false;
     trig_bit_pfmet130_pfmht130 = false;
     trig_bit_pfmet140_pfmht140 = false;
     trig_bit_pfmetTypeOne110_pfmht110 = false;
     trig_bit_pfmetTypeOne120_pfmht120 = false;
+    trig_bit_pfmetTypeOne120_pfmht120_PFHT60 = false;
     trig_bit_pfmetTypeOne130_pfmht130 = false;
     trig_bit_pfmetTypeOne140_pfmht140 = false;
     trig_bit_pfmetnomu110_pfmhtnomu110 = false;
     trig_bit_pfmetnomu120_pfmhtnomu120 = false;
+    trig_bit_pfmetnomu120_pfmhtnomu120_PFHT60 = false;
     trig_bit_pfmetnomu130_pfmhtnomu130 = false;
     trig_bit_pfmetnomu140_pfmhtnomu140 = false;
     trig_bit_ele27_wptight_gsf = false;
     trig_bit_isomu24 = false;
+    trig_bit_flag_HBHENoiseFilter = false;
+    trig_bit_flag_HBHENoiseIsoFilter = false;
+    trig_bit_flag_EcalDeadCellTriggerPrimitiveFilter = false;
+    trig_bit_flag_goodVertices = false;
+    trig_bit_flag_eeBadScFilter = false;
+    trig_bit_flag_globalSuperTightHalo2016Filter = false;
 
     muon1_pt = 0.;
     muon1_pfIso04 = -1.;
@@ -262,16 +304,22 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
               if ( TrigPath.Contains("HLT_PFMET110_PFMHT110_IDTight_v") ) trig_bit_pfmet110_pfmht110 = true;
               if ( TrigPath.Contains("HLT_PFMET120_PFMHT120_IDTight_v") ) trig_bit_pfmet120_pfmht120 = true;
+              if ( TrigPath.Contains("HLT_PFMET120_PFMHT120_IDTight_PFHT60_v") ) trig_bit_pfmet120_pfmht120_PFHT60 = true;
               if ( TrigPath.Contains("HLT_PFMET130_PFMHT130_IDTight_v") ) trig_bit_pfmet130_pfmht130 = true;
               if ( TrigPath.Contains("HLT_PFMET140_PFMHT140_IDTight_v") ) trig_bit_pfmet140_pfmht140 = true;
 
               if ( TrigPath.Contains("HLT_PFMETTypeOne110_PFMHT110_IDTight_v") ) trig_bit_pfmetTypeOne110_pfmht110 = true;
               if ( TrigPath.Contains("HLT_PFMETTypeOne120_PFMHT120_IDTight_v") ) trig_bit_pfmetTypeOne120_pfmht120 = true;
+              if ( TrigPath.Contains("HLT_PFMETTypeOne120_PFMHT120_IDTight_PFHT60_v") ) trig_bit_pfmetTypeOne120_pfmht120_PFHT60 = true;
               if ( TrigPath.Contains("HLT_PFMETTypeOne130_PFMHT130_IDTight_v") ) trig_bit_pfmetTypeOne130_pfmht130 = true;
               if ( TrigPath.Contains("HLT_PFMETTypeOne140_PFMHT140_IDTight_v") ) trig_bit_pfmetTypeOne140_pfmht140 = true;
 
-              if ( TrigPath.Contains("HLT_PFMETNoMu110_PFMHTNoMu110_IDTight_v") ) trig_bit_pfmetnomu110_pfmhtnomu110 = true;
+              if ( TrigPath.Contains("HLT_PFMETNoMu110_PFMHTNoMu110_IDTight_v") ) {
+		  trig_bit_pfmetnomu110_pfmhtnomu110 = true;
+		  std::cout << TrigPath << std::endl;
+	      }
               if ( TrigPath.Contains("HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_v") ) trig_bit_pfmetnomu120_pfmhtnomu120 = true;
+              if ( TrigPath.Contains("HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_PFHT60_v") ) trig_bit_pfmetnomu120_pfmhtnomu120_PFHT60 = true;
               if ( TrigPath.Contains("HLT_PFMETNoMu130_PFMHTNoMu130_IDTight_v") ) trig_bit_pfmetnomu130_pfmhtnomu130 = true;
               if ( TrigPath.Contains("HLT_PFMETNoMu140_PFMHTNoMu140_IDTight_v") ) trig_bit_pfmetnomu140_pfmhtnomu140 = true;
 
@@ -281,6 +329,37 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         }
     }
 
+
+    //MET filters
+    edm::Handle<edm::TriggerResults> filterResults; 
+    iEvent.getByToken(filterResultsToken, filterResults);
+
+    if( !filterResults.failedToGet() ) { 
+        int N_Filters = filterResults->size();
+        const edm::TriggerNames & filterName = iEvent.triggerNames(*filterResults);
+
+        for( int i_Trig = 0; i_Trig < N_Filters; ++i_Trig ) { 
+	    if (filterResults.product()->accept(i_Trig)) {
+	        TString TrigPath =filterName.triggerName(i_Trig);
+
+	        if ( TrigPath.Contains("Flag_HBHENoiseFilter") ) trig_bit_flag_HBHENoiseFilter = true;
+	        if ( TrigPath.Contains("Flag_HBHENoiseIsoFilter") ) trig_bit_flag_HBHENoiseIsoFilter = true;
+	        if ( TrigPath.Contains("Flag_EcalDeadCellTriggerPrimitiveFilter") ) trig_bit_flag_EcalDeadCellTriggerPrimitiveFilter = true;
+	        if ( TrigPath.Contains("Flag_goodVertices") ) trig_bit_flag_goodVertices = true;
+	        if ( TrigPath.Contains("Flag_eeBadScFilter") ) trig_bit_flag_eeBadScFilter = true;
+	        if ( TrigPath.Contains("Flag_globalSuperTightHalo2016Filter") ) trig_bit_flag_globalSuperTightHalo2016Filter = true;
+	    }
+        }
+    }
+
+    //BadChCand and BadPFMuon filters
+    edm::Handle<bool> filterBadChCand; 
+    iEvent.getByToken(badChCandFilterToken, filterBadChCand);
+    flag_BadChCand = *filterBadChCand;
+
+    edm::Handle<bool> filterBadPFMuon; 
+    iEvent.getByToken(badPFMuonFilterToken, filterBadPFMuon);
+    flag_BadPFMuon = *filterBadPFMuon;
 
     //Event info
     isMC = !iEvent.isRealData();
@@ -294,6 +373,7 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     //Vertices
     edm::Handle<reco::VertexCollection> VertexColl;
     iEvent.getByToken( vertexToken, VertexColl);
+    nPV = VertexColl->size();
     const reco::Vertex* vertex=&VertexColl->front();
     reco::TrackBase::Point vtxPoint(0,0,0);
     if(  VertexColl->size() >= 1 ) {
