@@ -4,9 +4,9 @@ import os
 samplenames = ['SingleMuon']
 ##samplename = 'SingleMuon'
 ##samplename = 'MET'
-#datasets = ['Run2017B-PromptReco-v1','Run2017B-PromptReco-v2','Run2017C-PromptReco-v1','Run2017C-PromptReco-v2','Run2017C-PromptReco-v3','Run2017D-PromptReco-v1']
+datasets = ['Run2018A-PromptReco-v1','Run2017A-PromptReco-v2']
 
-datasets = ['Run2017E-PromptReco-v1','Run2017F-PromptReco-v1']
+#datasets = ['Run2017E-PromptReco-v1','Run2017F-PromptReco-v1']
 #datasets = ['Run2017C-PromptReco-v3']
 ########parser#######
 import optparse
