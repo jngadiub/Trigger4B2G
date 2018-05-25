@@ -79,6 +79,8 @@ class TrigAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
       // ----------member data ---------------------------
     edm::EDGetTokenT<edm::TriggerResults> trigResultsToken;
     edm::EDGetTokenT<edm::TriggerResults> filterResultsToken;
+    edm::EDGetTokenT<trigger::TriggerEvent> trigobjectsRAWToken_;//for getting L1 bit
+    edm::EDGetTokenT<pat::TriggerObjectStandAloneCollection> trigobjectsMINIAODToken_;//for getting HLT in miniaod??
     edm::EDGetTokenT<bool> badChCandFilterToken;
     edm::EDGetTokenT<bool> badPFMuonFilterToken;
     edm::EDGetTokenT<pat::METCollection> metToken;
@@ -93,7 +95,7 @@ class TrigAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     bool isVerbose;
     bool isMC;
     long int EventNumber, LumiNumber, RunNumber, nPV;
-    float muon1_pt, muon1_pfIso04, electron1_pt, fatjet1_pt, jet1_pt;
+    float muon1_pt, muon1_pfIso04, electron1_pt, fatjet1_pt, jet1_pt, fatjet1_phi, fatjet1_eta;
     float met_pt, met_pt_nomu_L, met_pt_nomu_T, m_ht, m_ht_nomu_L, m_ht_nomu_T, min_met_mht, min_met_mht_nomu_L, min_met_mht_nomu_T, met_phi, met_phi_nomu_L, met_phi_nomu_T;
     bool fatjet1_isLoose, fatjet1_isTight, muon1_isLoose, muon1_isTight;
     long int nTightMuons, nTightElectrons, nTightFatJets, nLooseMuons, nLooseElectrons, nLooseFatJets, nLooseJets, nTightJets;
@@ -114,6 +116,18 @@ class TrigAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     bool   trig_bit_pfmetnomu140_pfmhtnomu140;
     bool   trig_bit_ele27_wptight_gsf;
     bool   trig_bit_isomu24;
+    bool   trig_bit_isomu27;
+    //L1 bits
+    bool trig_bit_hltMHT90;
+    bool trig_bit_hltL1sAllETMHFSeeds;
+    bool trig_bit_hltL1sAllETMHadSeeds;
+    bool trig_bit_hltMETClean80;
+    bool trig_bit_hltMET90;
+    bool trig_bit_hltPFMHTNoMuTightID120;
+    bool trig_bit_hltPFMETNoMu120;
+    bool trig_bit_hltL1sAllETMHFHTT60Seeds;
+    bool trig_bit_hltPFHTJet30;
+    bool trig_bit_hltPFHT60Jet30;
     //MET filters
     bool trig_bit_flag_HBHENoiseFilter;
     bool trig_bit_flag_HBHENoiseIsoFilter;
@@ -179,8 +193,8 @@ TrigAnalyzer::TrigAnalyzer(const edm::ParameterSet& iConfig)
     tree -> Branch("nPV" , &nPV , "nPV/L");
     tree -> Branch("nLooseMuons" , &nLooseMuons , "nLooseMuons/L");
     tree -> Branch("nLooseElectrons" , &nLooseElectrons , "nLooseElectrons/L");
-    tree -> Branch("nLooseFatJets" , &nLooseFatJets , "nLooseFatJets/L");
-    tree -> Branch("nLooseJets" , &nLooseJets , "nLooseJets/L");
+    //tree -> Branch("nLooseFatJets" , &nLooseFatJets , "nLooseFatJets/L");
+    //tree -> Branch("nLooseJets" , &nLooseJets , "nLooseJets/L");
     tree -> Branch("nTightMuons" , &nTightMuons , "nTightMuons/L");
     tree -> Branch("nTightElectrons" , &nTightElectrons , "nTightElectrons/L");
     tree -> Branch("nTightFatJets" , &nTightFatJets , "nTightFatJets/L");
@@ -191,7 +205,9 @@ TrigAnalyzer::TrigAnalyzer(const edm::ParameterSet& iConfig)
     tree -> Branch("Muon1_pfIso04", &muon1_pfIso04, "Muon1_pfIso04/F");
     tree -> Branch("Electron1_pt", &electron1_pt, "Electron1_pt/F");
     tree -> Branch("FatJet1_pt", &fatjet1_pt, "FatJet1_pt/F");
-    tree -> Branch("FatJet1_isLoose", &fatjet1_isLoose, "FatJet1_isLoose/B");
+    tree -> Branch("FatJet1_phi", &fatjet1_phi, "FatJet1_phi/F");
+    tree -> Branch("FatJet1_eta", &fatjet1_eta, "FatJet1_eta/F");
+    //tree -> Branch("FatJet1_isLoose", &fatjet1_isLoose, "FatJet1_isLoose/B");
     tree -> Branch("FatJet1_isTight", &fatjet1_isTight, "FatJet1_isTight/B");
     tree -> Branch("Jet1_pt", &jet1_pt, "Jet1_pt/F");
     tree -> Branch("MEt_pt", &met_pt, "MEt_pt/F");
@@ -221,6 +237,7 @@ TrigAnalyzer::TrigAnalyzer(const edm::ParameterSet& iConfig)
     tree -> Branch("HLT_PFMETNoMu140_PFMHTNoMu140_IDTight_v", &trig_bit_pfmetnomu140_pfmhtnomu140, "HLT_PFMETNoMu140_PFMHTNoMu140_IDTight_v/B");
     tree -> Branch("HLT_Ele27_WPTight_Gsf_v", &trig_bit_ele27_wptight_gsf, "HLT_Ele27_WPTight_Gsf_v/B");
     tree -> Branch("HLT_IsoMu24_v", &trig_bit_isomu24, "HLT_IsoMu24_v/B");
+    tree -> Branch("HLT_IsoMu27_v", &trig_bit_isomu27, "HLT_IsoMu27_v/B");
     tree -> Branch("Flag_HBHENoiseFilter", &trig_bit_flag_HBHENoiseFilter, "Flag_HBHENoiseFilter/B");
     tree -> Branch("Flag_HBHENoiseIsoFilter", &trig_bit_flag_HBHENoiseIsoFilter, "Flag_HBHENoiseIsoFilter/B");
     tree -> Branch("Flag_EcalDeadCellTriggerPrimitiveFilter", &trig_bit_flag_EcalDeadCellTriggerPrimitiveFilter, "Flag_EcalDeadCellTriggerPrimitiveFilter/B");
@@ -275,6 +292,7 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     trig_bit_pfmetnomu140_pfmhtnomu140 = false;
     trig_bit_ele27_wptight_gsf = false;
     trig_bit_isomu24 = false;
+    trig_bit_isomu27 = false;
     trig_bit_flag_HBHENoiseFilter = false;
     trig_bit_flag_HBHENoiseIsoFilter = false;
     trig_bit_flag_EcalDeadCellTriggerPrimitiveFilter = false;
@@ -325,6 +343,7 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
               if ( TrigPath.Contains("HLT_Ele27_WPTight_Gsf_v") ) trig_bit_ele27_wptight_gsf = true;
               if ( TrigPath.Contains("HLT_IsoMu24_v") ) trig_bit_isomu24 = true;
+              if ( TrigPath.Contains("HLT_IsoMu27_v") ) trig_bit_isomu27 = true;
            }
         }
     }
@@ -395,19 +414,21 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     iEvent.getByToken( fatjetToken, fatjets );
     //std::vector<pat::Jet> FatJetVect;
 
+    
     for(std::vector<pat::Jet>::const_iterator it=fatjets->begin(); it!=fatjets->end(); it++) {
         pat::Jet f=*it;
-	if ( !isLooseJet(f) ) continue;
-	fatjet1_isLoose = true;
         if ( f.pt() < 170 ) continue;
+	//if ( !isLooseJet(f) ) continue;
+	//fatjet1_isLoose = true;
         if ( fabs( f.eta() ) > 2.5 ) continue;
-	nLooseFatJets++;
+	//nLooseFatJets++;
 	fatjet1_pt = f.pt();
 	if ( !isTightJet(f) ) continue;
 	fatjet1_isTight = true;
 	nTightFatJets++;
-	//FatJetVect.push_back(f);
+	////FatJetVect.push_back(f);
     }
+    //annoying JPT error!!!
 
     //Loop on AK4 jets
     edm::Handle<pat::JetCollection> jets;
@@ -416,10 +437,15 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     for(std::vector<pat::Jet>::const_iterator it=jets->begin(); it!=jets->end(); it++) {
         pat::Jet j=*it;
-	if ( !isLooseJet(j) ) continue;
+        //std::cout << "jet info" << std::endl; // AK4 are always PF jets!!
+	//std::cout << j.isPFJet() << std::endl;//if this works...
+	//std::cout << j.hasPFSpecific() << std::endl;//if this works...
+	//if ( !isLooseJet(j) ) continue;
+        if ( !isTightJet(j) ) continue;
         if ( j.pt() < 30 ) continue;//this causes a jump at ~30? investigate!
         if ( fabs( j.eta() ) > 2.5 ) continue;
-        nLooseJets++;
+        //nLooseJets++;
+        nTightJets++;
 	jet1_pt = j.pt();
 	JetVect.push_back(j);
     }
@@ -569,7 +595,7 @@ TrigAnalyzer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
 }
 
 
-//Method to define loose jet ID (2016 data)
+//Method to define loose jet ID (2017 data)
 bool TrigAnalyzer::isLooseJet(pat::Jet& jet){
     if(fabs(jet.eta())<=2.7){/// |eta| < 2.7
         if(jet.neutralHadronEnergyFraction()>=0.99) return false;
@@ -594,7 +620,7 @@ bool TrigAnalyzer::isLooseJet(pat::Jet& jet){
     return true;
 }
 
-//Method to define tight jet ID (2016 data)
+//Method to define tight jet ID (2017 data)
 bool TrigAnalyzer::isTightJet(pat::Jet& jet){
     if(fabs(jet.eta())<=2.7){/// |eta| < 2.7
         if(jet.neutralHadronEnergyFraction()>=0.90) return false;
@@ -607,12 +633,15 @@ bool TrigAnalyzer::isTightJet(pat::Jet& jet){
             }
     }
     else{ /// |eta| > 2.7
-        if(jet.neutralEmEnergyFraction()>=0.90) return false;
         if (fabs(jet.eta())<=3.0) { /// 2.7 < |eta| < 3.0
             if(jet.neutralMultiplicity()<=2) return false;
+            if(jet.neutralEmEnergyFraction()>=0.99) return false;
+            if(jet.neutralEmEnergyFraction()<=0.02) return false;
         }
         else{ /// |eta| > 3.0
            if(jet.neutralMultiplicity()<=10) return false;
+           if(jet.neutralHadronEnergyFraction()<=0.02) return false;
+           if(jet.neutralEmEnergyFraction()>=0.90) return false;
         }
     }
 

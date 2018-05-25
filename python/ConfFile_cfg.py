@@ -15,11 +15,7 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 process.source = cms.Source("PoolSource",
     # replace 'myfile.root' with the source file you want to use
     fileNames = cms.untracked.vstring(
-        #'/store/data/Run2017A/SingleElectron/MINIAOD/PromptReco-v2/000/296/168/00000/9ED74C00-5D4C-E711-9499-02163E01A667.root'
-        #'/store/data/Run2017A/SingleMuon/MINIAOD/PromptReco-v2/000/296/168/00000/084C505D-784C-E711-8140-02163E019DA4.root'
-        '/store/data/Run2017B/SingleMuon/MINIAOD/PromptReco-v2/000/298/678/00000/B48DBFCD-A466-E711-A86B-02163E01A456.root'
-        #'/store/data/Run2017C/SingleMuon/MINIAOD/PromptReco-v2/000/300/087/00000/009C8147-0D77-E711-A1EA-02163E0145A7.root',
-        #'/store/data/Run2017D/SingleMuon/MINIAOD/PromptReco-v1/000/302/031/00000/2411F4EE-2D8F-E711-B514-02163E0134D6.root',
+        '/store/data/Run2018A/SingleMuon/MINIAOD/PromptReco-v2/000/316/239/00000/285EF140-4059-E811-8950-FA163E4D9C0E.root'
     )
 )
 
@@ -55,8 +51,8 @@ process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_condD
 from Configuration.AlCa.GlobalTag import GlobalTag
 GT = ''
 if isData:
-    if isPromptReco: GT = "92X_dataRun2_Prompt_v4"
-    print "data 2017, PromptReco"
+    if isPromptReco: GT = "101X_dataRun2_Prompt_v9"
+    print "data 2018, PromptReco"
 else:
     GT = "90X_upgrade2017_realistic_v20"
 
@@ -69,7 +65,7 @@ print 'GlobalTag loaded: ', GT
 
 # JSON filter
 import FWCore.PythonUtilities.LumiList as LumiList
-jsonName = "Cert_294927-305364_13TeV_PromptReco_Collisions17_JSON"#"Cert_294927-301567_13TeV_PromptReco_Collisions17_JSON" #golden json
+jsonName = "Cert_314472-316271_13TeV_PromptReco_Collisions18_JSON"#"Cert_294927-301567_13TeV_PromptReco_Collisions17_JSON" #golden json
 process.source.lumisToProcess = LumiList.LumiList(filename = 'data/JSON/'+jsonName+'.txt').getVLuminosityBlockRange()
 print "JSON file loaded: ", jsonName
 
