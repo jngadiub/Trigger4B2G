@@ -1,14 +1,12 @@
 # Trigger4B2G
-First tentative super-simplified ntuplizer to run super-easy trigger studies on 2017 early data
+First tentative super-simplified ntuplizer to run super-easy trigger studies on 2018 early data
 
 ## Notes on trigger studies
-### 11 july
-* 2017 data are new, hence we don't have POG blessed objects or recipes yet. We are going to read them from plain miniAOD.
+### 25 May 2018
+* 2018 data are new, hence we don't have POG blessed objects or recipes yet. We are going to read them from plain miniAOD.
 * Getting muon ID from miniAOD is straightforward, jet ID a bit more difficult (but done), electron ID still work in progress (old 8XX recipes don't work anymore).
-* JSON file used so far is DCS only (as suggested by DQM experts).
 * Global Tag is the proper one for PromptReco (taken from PPD twiki).
 * TrigAnalyzer.cc so far calculates MET trigger efficiencies on single muon dataset.
-### 5 september
 * Latest golden JSON files available
 * MET filters being tested
 
@@ -21,8 +19,8 @@ git environment set
 
 In your working area, first set up the CMSSW release and initialize git:
 ```bash
-cmsrel CMSSW_9_2_10
-cd CMSSW_9_2_10/src
+cmsrel CMSSW_10_1_4_patch1
+cd CMSSW_10_1_4_patch1/src
 cmsenv
 git cms-init
 ```
@@ -33,7 +31,7 @@ Clone the repository:
 cd $CMSSW_BASE/src
 mkdir TrigAnalyzer
 cd TrigAnalyzer
-git clone https://github.com/lbenato/Trigger4B2G.git
+git clone -b 2018 --single-branch https://github.com/lbenato/Trigger4B2G.git
 ```
 
 ## Compile and Run
