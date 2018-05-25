@@ -4,7 +4,7 @@ import os
 samplenames = ['SingleMuon']
 ##samplename = 'SingleMuon'
 ##samplename = 'MET'
-datasets = ['Run2018A-PromptReco-v1','Run2017A-PromptReco-v2']
+datasets = ['Run2018A-PromptReco-v1','Run20178A-PromptReco-v2']
 
 #datasets = ['Run2017E-PromptReco-v1','Run2017F-PromptReco-v1']
 #datasets = ['Run2017C-PromptReco-v3']
