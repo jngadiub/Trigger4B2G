@@ -75,12 +75,13 @@ class TrigAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
       virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
       virtual void endJob() override;
       bool passIDWP(std::string, bool, float, float, float, float, float, float, float, bool, int);
+      void reset(void);
 
       // ----------member data ---------------------------
     edm::EDGetTokenT<edm::TriggerResults> trigResultsToken;
     edm::EDGetTokenT<edm::TriggerResults> filterResultsToken;
     edm::EDGetTokenT<trigger::TriggerEvent> trigobjectsRAWToken_;//for getting L1 bit
-    edm::EDGetTokenT<pat::TriggerObjectStandAloneCollection> trigobjectsMINIAODToken_;//for getting HLT in miniaod??
+    edm::EDGetTokenT<pat::TriggerObjectStandAloneCollection> triggerObjects_;//for getting HLT in miniaod??
     edm::EDGetTokenT<bool> badChCandFilterToken;
     edm::EDGetTokenT<bool> badPFMuonFilterToken;
     edm::EDGetTokenT<pat::METCollection> metToken;
@@ -88,55 +89,108 @@ class TrigAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     edm::EDGetTokenT<pat::JetCollection> fatjetToken;
     edm::EDGetTokenT<pat::MuonCollection> muonToken;
     edm::EDGetTokenT<reco::VertexCollection> vertexToken;
-    edm::EDGetTokenT<pat::ElectronCollection> electronToken;
+    edm::EDGetTokenT<edm::View<pat::Electron> > electronToken;
+    edm::EDGetTokenT<edm::ValueMap<bool> > eleVetoIdMapToken;
+    edm::EDGetTokenT<edm::ValueMap<bool> > eleLooseIdMapToken;
+    edm::EDGetTokenT<edm::ValueMap<bool> > eleMediumIdMapToken;
+    edm::EDGetTokenT<edm::ValueMap<bool> > eleTightIdMapToken;
+    edm::EDGetTokenT<edm::ValueMap<bool> > eleHEEPIdMapToken;
 
+    std::vector<std::string> filterNames;
 
     TTree* tree;
+    
+    //global variables
     bool isVerbose;
     bool isMC;
-    long int EventNumber, LumiNumber, RunNumber, nPV;
-    float muon1_pt, muon1_pfIso04, electron1_pt, fatjet1_pt, jet1_pt, fatjet1_phi, fatjet1_eta;
+    int EventNumber, LumiNumber, RunNumber, nPV;
+    
+    //muons
+    int muons_N;
+    std::vector<float> muons_pt, muons_eta, muons_phi, muons_e;
+    std::vector<float> muons_pfIso04, muons_trkIso;
+    std::vector<int> muons_isLoose, muons_isTight, muons_isHighPt;
+    
+    //electrons
+    int eles_N;
+    std::vector<float> eles_pt, eles_eta, eles_phi, eles_e;
+    std::vector<int> eles_isVeto, eles_isLoose, eles_isMedium, eles_isTight, eles_isHeep;
+    
+    //ak4 jets
+    float jet1_pt;
+    int nLooseJets, nTightJets;
+    
+    //ak8 jets
+    int AK8jets_N;
+    std::vector<float> AK8jets_pt, AK8jets_eta, AK8jets_phi, AK8jets_e, AK8jets_m;
+    std::vector<float> AK8jets_softdrop_mass, AK8jets_tau1, AK8jets_tau2, AK8jets_tau3;
+    std::vector<int> AK8jets_isLoose, AK8jets_isTight;
+    
+    //HT (AK4 CHS tight jets with pT > 30 GeV and |eta| < 3.0)
+    float HT;
+    
+    //met/mht
     float met_pt, met_pt_nomu_L, met_pt_nomu_T, m_ht, m_ht_nomu_L, m_ht_nomu_T, min_met_mht, min_met_mht_nomu_L, min_met_mht_nomu_T, met_phi, met_phi_nomu_L, met_phi_nomu_T;
-    bool fatjet1_isLoose, fatjet1_isTight, muon1_isLoose, muon1_isTight;
-    long int nTightMuons, nTightElectrons, nTightFatJets, nLooseMuons, nLooseElectrons, nLooseFatJets, nLooseJets, nTightJets;
-    bool   trig_bit_pfmet110_pfmht110;
-    bool   trig_bit_pfmet120_pfmht120;
-    bool   trig_bit_pfmet120_pfmht120_PFHT60;
-    bool   trig_bit_pfmet130_pfmht130;
-    bool   trig_bit_pfmet140_pfmht140;
-    bool   trig_bit_pfmetTypeOne110_pfmht110;
-    bool   trig_bit_pfmetTypeOne120_pfmht120;
-    bool   trig_bit_pfmetTypeOne120_pfmht120_PFHT60;
-    bool   trig_bit_pfmetTypeOne130_pfmht130;
-    bool   trig_bit_pfmetTypeOne140_pfmht140;
-    bool   trig_bit_pfmetnomu110_pfmhtnomu110;
-    bool   trig_bit_pfmetnomu120_pfmhtnomu120;
-    bool   trig_bit_pfmetnomu120_pfmhtnomu120_PFHT60;
-    bool   trig_bit_pfmetnomu130_pfmhtnomu130;
-    bool   trig_bit_pfmetnomu140_pfmhtnomu140;
-    bool   trig_bit_ele27_wptight_gsf;
-    bool   trig_bit_isomu24;
-    bool   trig_bit_isomu27;
+
+    //trigger bits
+    int   trig_bit_pfmet110_pfmht110;
+    int   trig_bit_pfmet120_pfmht120;
+    int   trig_bit_pfmet120_pfmht120_PFHT60;
+    int   trig_bit_pfmet130_pfmht130;
+    int   trig_bit_pfmet140_pfmht140;
+    int   trig_bit_pfmetTypeOne110_pfmht110;
+    int   trig_bit_pfmetTypeOne120_pfmht120;
+    int   trig_bit_pfmetTypeOne120_pfmht120_PFHT60;
+    int   trig_bit_pfmetTypeOne130_pfmht130;
+    int   trig_bit_pfmetTypeOne140_pfmht140;
+    int   trig_bit_pfmetnomu110_pfmhtnomu110;
+    int   trig_bit_pfmetnomu120_pfmhtnomu120;
+    int   trig_bit_pfmetnomu120_pfmhtnomu120_PFHT60;
+    int   trig_bit_pfmetnomu130_pfmhtnomu130;
+    int   trig_bit_pfmetnomu140_pfmhtnomu140;
+    int   trig_bit_ele27_wptight_gsf;
+    int   trig_bit_isomu24;
+    int   trig_bit_isomu27;
+    int   trig_bit_mu50;    
+    int   trig_bit_pfht1050;
+    int   trig_bit_ak8pfjet400;
+    int   trig_bit_ak8pfjet450;
+    int   trig_bit_ak8pfjet500;
+    int   trig_bit_ak8pfjet550;
+    int   trig_bit_ak8pfht750_trimmass50;
+    int   trig_bit_ak8pfht800_trimmass50;
+    int   trig_bit_ak8pfht850_trimmass50;
+    int   trig_bit_ak8pfht900_trimmass50;
+    int   trig_bit_ak8pfjet360_trimmass30;
+    int   trig_bit_ak8pfjet380_trimmass30;
+    int   trig_bit_ak8pfjet400_trimmass30;
+    int   trig_bit_ak8pfjet420_trimmass30;        
     //L1 bits
-    bool trig_bit_hltMHT90;
-    bool trig_bit_hltL1sAllETMHFSeeds;
-    bool trig_bit_hltL1sAllETMHadSeeds;
-    bool trig_bit_hltMETClean80;
-    bool trig_bit_hltMET90;
-    bool trig_bit_hltPFMHTNoMuTightID120;
-    bool trig_bit_hltPFMETNoMu120;
-    bool trig_bit_hltL1sAllETMHFHTT60Seeds;
-    bool trig_bit_hltPFHTJet30;
-    bool trig_bit_hltPFHT60Jet30;
+    int trig_bit_hltMHT90;
+    int trig_bit_hltL1sAllETMHFSeeds;
+    int trig_bit_hltL1sAllETMHadSeeds;
+    int trig_bit_hltMETClean80;
+    int trig_bit_hltMET90;
+    int trig_bit_hltPFMHTNoMuTightID120;
+    int trig_bit_hltPFMETNoMu120;
+    int trig_bit_hltL1sAllETMHFHTT60Seeds;
+    int trig_bit_hltPFHTJet30;
+    int trig_bit_hltPFHT60Jet30;
     //MET filters
-    bool trig_bit_flag_HBHENoiseFilter;
-    bool trig_bit_flag_HBHENoiseIsoFilter;
-    bool trig_bit_flag_EcalDeadCellTriggerPrimitiveFilter;
-    bool trig_bit_flag_goodVertices;
-    bool trig_bit_flag_eeBadScFilter;
-    bool trig_bit_flag_globalSuperTightHalo2016Filter;
-    bool flag_BadChCand;
-    bool flag_BadPFMuon;
+    int trig_bit_flag_HBHENoiseFilter;
+    int trig_bit_flag_HBHENoiseIsoFilter;
+    int trig_bit_flag_EcalDeadCellTriggerPrimitiveFilter;
+    int trig_bit_flag_goodVertices;
+    int trig_bit_flag_eeBadScFilter;
+    int trig_bit_flag_globalSuperTightHalo2016Filter;
+    int flag_BadChCand;
+    int flag_BadPFMuon;
+
+    //muon trigger objects
+    float mu_trigObj_pt_IsoMu24, mu_trigObj_eta_IsoMu24, mu_trigObj_phi_IsoMu24, mu_trigObj_e_IsoMu24;
+    float mu_trigObj_pt_IsoMu27, mu_trigObj_eta_IsoMu27, mu_trigObj_phi_IsoMu27, mu_trigObj_e_IsoMu27;
+    float mu_trigObj_pt_Mu50, mu_trigObj_eta_Mu50, mu_trigObj_phi_Mu50, mu_trigObj_e_Mu50;
+    
 };
 
 
@@ -155,6 +209,10 @@ TrigAnalyzer::TrigAnalyzer(const edm::ParameterSet& iConfig)
 
 {
 
+    filterNames.push_back("hltL3crIsoL1sSingleMu22L1f0L2f10QL3f24QL3trkIsoFiltered0p07"); //IsoMu24
+    filterNames.push_back("hltL3crIsoL1sMu22Or25L1f0L2f10QL3f27QL3trkIsoFiltered0p07"); //IsoMu27
+    filterNames.push_back("hltL3fL1sMu22Or25L1f0L2f10QL3Filtered50Q"); //Mu50
+    
     //Input tags
     edm::InputTag IT_trigResults = edm::InputTag("TriggerResults::HLT");
     trigResultsToken= consumes<edm::TriggerResults>(IT_trigResults);
@@ -177,8 +235,23 @@ TrigAnalyzer::TrigAnalyzer(const edm::ParameterSet& iConfig)
     edm::InputTag IT_muons = edm::InputTag("slimmedMuons");
     muonToken = consumes<pat::MuonCollection>(IT_muons);
     edm::InputTag IT_electrons = edm::InputTag("slimmedElectrons");
-    electronToken = consumes<pat::ElectronCollection>(IT_electrons);
-
+    electronToken = consumes<edm::View<pat::Electron> >(IT_electrons);   
+    
+    edm::InputTag IT_trigObj = edm::InputTag("slimmedPatTrigger");
+    triggerObjects_ = consumes<pat::TriggerObjectStandAloneCollection>(IT_trigObj);
+;
+    
+    /*edm::InputTag IT_eleVetoId = edm::InputTag("egmGsfElectronIDs:cutBasedElectronID-Fall17-94X-V1-veto");
+    eleVetoIdMapToken = consumes<edm::ValueMap<bool> >(IT_eleVetoId);
+    edm::InputTag IT_eleLooseId = edm::InputTag("egmGsfElectronIDs:cutBasedElectronID-Fall17-94X-V1-loose");
+    eleLooseIdMapToken = consumes<edm::ValueMap<bool> >(IT_eleLooseId);
+    edm::InputTag IT_eleMediumId = edm::InputTag("egmGsfElectronIDs:cutBasedElectronID-Fall17-94X-V1-medium");
+    eleMediumIdMapToken = consumes<edm::ValueMap<bool> >(IT_eleMediumId);
+    edm::InputTag IT_eleTightId = edm::InputTag("egmGsfElectronIDs:cutBasedElectronID-Fall17-94X-V1-tight");
+    eleTightIdMapToken = consumes<edm::ValueMap<bool> >(IT_eleTightId);
+    edm::InputTag IT_eleHeepId = edm::InputTag("egmGsfElectronIDs:heepElectronID-HEEPV70");
+    eleHEEPIdMapToken = consumes<edm::ValueMap<bool> >(IT_eleHeepId);*/
+    
     isVerbose = iConfig.getParameter<bool> ("verbose");
 
     //now do what ever initialization is needed
@@ -186,32 +259,58 @@ TrigAnalyzer::TrigAnalyzer(const edm::ParameterSet& iConfig)
 
     edm::Service<TFileService> fs;
     tree = fs->make<TTree>("tree", "tree");
+    
+    //global variables
     tree -> Branch("isMC" , &isMC, "isMC/O");
-    tree -> Branch("EventNumber" , &EventNumber , "EventNumber/L");
-    tree -> Branch("LumiNumber" , &LumiNumber , "LumiNumber/L");
-    tree -> Branch("RunNumber" , &RunNumber , "RunNumber/L");
-    tree -> Branch("nPV" , &nPV , "nPV/L");
-    tree -> Branch("nLooseMuons" , &nLooseMuons , "nLooseMuons/L");
-    tree -> Branch("nLooseElectrons" , &nLooseElectrons , "nLooseElectrons/L");
-    //tree -> Branch("nLooseFatJets" , &nLooseFatJets , "nLooseFatJets/L");
-    //tree -> Branch("nLooseJets" , &nLooseJets , "nLooseJets/L");
-    tree -> Branch("nTightMuons" , &nTightMuons , "nTightMuons/L");
-    tree -> Branch("nTightElectrons" , &nTightElectrons , "nTightElectrons/L");
-    tree -> Branch("nTightFatJets" , &nTightFatJets , "nTightFatJets/L");
-    tree -> Branch("nTightJets" , &nTightJets , "nTightJets/L");
-    tree -> Branch("Muon1_pt", &muon1_pt, "Muon1_pt/F");
-    tree -> Branch("Muon1_isLoose", &muon1_isLoose, "Muon1_isLoose/B");
-    tree -> Branch("Muon1_isTight", &muon1_isTight, "Muon1_isTight/B");
-    tree -> Branch("Muon1_pfIso04", &muon1_pfIso04, "Muon1_pfIso04/F");
-    tree -> Branch("Electron1_pt", &electron1_pt, "Electron1_pt/F");
-    tree -> Branch("FatJet1_pt", &fatjet1_pt, "FatJet1_pt/F");
-    tree -> Branch("FatJet1_phi", &fatjet1_phi, "FatJet1_phi/F");
-    tree -> Branch("FatJet1_eta", &fatjet1_eta, "FatJet1_eta/F");
-    //tree -> Branch("FatJet1_isLoose", &fatjet1_isLoose, "FatJet1_isLoose/B");
-    tree -> Branch("FatJet1_isTight", &fatjet1_isTight, "FatJet1_isTight/B");
-    tree -> Branch("Jet1_pt", &jet1_pt, "Jet1_pt/F");
+    tree -> Branch("EventNumber" , &EventNumber , "EventNumber/I");
+    tree -> Branch("LumiNumber" , &LumiNumber , "LumiNumber/I");
+    tree -> Branch("RunNumber" , &RunNumber , "RunNumber/I");
+    tree -> Branch("nPV" , &nPV , "nPV/I");
+    
+    //muons
+    tree -> Branch("muons_N", &muons_N, "muons_N/I");
+    tree -> Branch("muons_pt", &muons_pt);
+    tree -> Branch("muons_eta", &muons_eta);
+    tree -> Branch("muons_phi", &muons_phi);
+    tree -> Branch("muons_e", &muons_e);
+    tree -> Branch("muons_pfIso04", &muons_pfIso04);
+    tree -> Branch("muons_trkIso", &muons_trkIso);
+    tree -> Branch("muons_isLoose", &muons_isLoose);
+    tree -> Branch("muons_isTight", &muons_isTight);
+    tree -> Branch("muons_isHighPt", &muons_isHighPt);
+    
+    //electrons
+    tree -> Branch("eles_N", &eles_N, "eles_N/I");
+    tree -> Branch("eles_pt", &eles_pt);
+    tree -> Branch("eles_eta", &eles_eta);
+    tree -> Branch("eles_phi", &eles_phi);
+    tree -> Branch("eles_e", &eles_e);
+    tree -> Branch("eles_isVeto", &eles_isVeto);
+    tree -> Branch("eles_isLoose", &eles_isLoose);
+    tree -> Branch("eles_isMedium", &eles_isMedium);
+    tree -> Branch("eles_isTight", &eles_isTight);
+    tree -> Branch("eles_isHeep", &eles_isHeep);
+        
+    //ak8jets
+    tree -> Branch("AK8jets_N", &AK8jets_N, "AK8jets_N/I");
+    tree -> Branch("AK8jets_isLoose", &AK8jets_isLoose);
+    tree -> Branch("AK8jets_isTight", &AK8jets_isTight);
+    tree -> Branch("AK8jets_pt", &AK8jets_pt);
+    tree -> Branch("AK8jets_eta", &AK8jets_eta);
+    tree -> Branch("AK8jets_phi", &AK8jets_phi);
+    tree -> Branch("AK8jets_m", &AK8jets_m);
+    tree -> Branch("AK8jets_e", &AK8jets_e);
+    tree -> Branch("AK8jets_softdrop_mass", &AK8jets_softdrop_mass);
+    tree -> Branch("AK8jets_tau1", &AK8jets_tau1);
+    tree -> Branch("AK8jets_tau2", &AK8jets_tau2);
+    tree -> Branch("AK8jets_tau3", &AK8jets_tau3);
+    
+    //HT (AK4 CHS tight jets with pT > 30 GeV and |eta| < 3.0)
+    tree -> Branch("HT", &HT, "HT/F");
+    
+    //met/mht
     tree -> Branch("MEt_pt", &met_pt, "MEt_pt/F");
-    tree -> Branch("MEt_phi", &met_phi, "MEt_phi/F");
+    tree -> Branch("MEt_phi", &met_phi, "MEt_phi/F");    
     tree -> Branch("m_ht", &m_ht, "m_ht/F");
     tree -> Branch("m_ht_nomu_L", &m_ht_nomu_L, "m_ht_nomu_L/F");
     tree -> Branch("m_ht_nomu_T", &m_ht_nomu_T, "m_ht_nomu_T/F");
@@ -220,32 +319,69 @@ TrigAnalyzer::TrigAnalyzer(const edm::ParameterSet& iConfig)
     tree -> Branch("met_pt_nomu_T", &met_pt_nomu_T, "met_pt_nomu_T/F");
     tree -> Branch("min_met_mht_nomu_L", &min_met_mht_nomu_L, "min_met_mht_nomu_L/F");
     tree -> Branch("min_met_mht_nomu_T", &min_met_mht_nomu_T, "min_met_mht_nomu_T/F");
-    tree -> Branch("HLT_PFMET110_PFMHT110_IDTight_v", &trig_bit_pfmet110_pfmht110, "HLT_PFMET110_PFMHT110_IDTight_v/B");
-    tree -> Branch("HLT_PFMET120_PFMHT120_IDTight_v", &trig_bit_pfmet120_pfmht120, "HLT_PFMET120_PFMHT120_IDTight_v/B");
-    tree -> Branch("HLT_PFMET120_PFMHT120_IDTight_PFHT60_v", &trig_bit_pfmet120_pfmht120_PFHT60, "HLT_PFMET120_PFMHT120_IDTight_PFHT60_v/B");
-    tree -> Branch("HLT_PFMET130_PFMHT130_IDTight_v", &trig_bit_pfmet130_pfmht130, "HLT_PFMET130_PFMHT130_IDTight_v/B");
-    tree -> Branch("HLT_PFMET140_PFMHT140_IDTight_v", &trig_bit_pfmet140_pfmht140, "HLT_PFMET140_PFMHT140_IDTight_v/B");
-    tree -> Branch("HLT_PFMETTypeOne110_PFMHT110_IDTight_v", &trig_bit_pfmetTypeOne110_pfmht110, "HLT_PFMETTypeOne110_PFMHT110_IDTight_v/B");
-    tree -> Branch("HLT_PFMETTypeOne120_PFMHT120_IDTight_v", &trig_bit_pfmetTypeOne120_pfmht120, "HLT_PFMETTypeOne120_PFMHT120_IDTight_v/B");
-    tree -> Branch("HLT_PFMETTypeOne120_PFMHT120_IDTight_PFHT60_v", &trig_bit_pfmetTypeOne120_pfmht120_PFHT60, "HLT_PFMETTypeOne120_PFMHT120_IDTight_PFHT60_v/B");
-    tree -> Branch("HLT_PFMETTypeOne130_PFMHT130_IDTight_v", &trig_bit_pfmetTypeOne130_pfmht130, "HLT_PFMETTypeOne130_PFMHT130_IDTight_v/B");
-    tree -> Branch("HLT_PFMETTypeOne140_PFMHT140_IDTight_v", &trig_bit_pfmetTypeOne140_pfmht140, "HLT_PFMETTypeOne140_PFMHT140_IDTight_v/B");
-    tree -> Branch("HLT_PFMETNoMu110_PFMHTNoMu110_IDTight_v", &trig_bit_pfmetnomu110_pfmhtnomu110, "HLT_PFMETNoMu110_PFMHTNoMu110_IDTight_v/B");
-    tree -> Branch("HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_v", &trig_bit_pfmetnomu120_pfmhtnomu120, "HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_v/B");
-    tree -> Branch("HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_PFHT60_v", &trig_bit_pfmetnomu120_pfmhtnomu120_PFHT60, "HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_PFHT60_v/B");
-    tree -> Branch("HLT_PFMETNoMu130_PFMHTNoMu130_IDTight_v", &trig_bit_pfmetnomu130_pfmhtnomu130, "HLT_PFMETNoMu130_PFMHTNoMu130_IDTight_v/B");
-    tree -> Branch("HLT_PFMETNoMu140_PFMHTNoMu140_IDTight_v", &trig_bit_pfmetnomu140_pfmhtnomu140, "HLT_PFMETNoMu140_PFMHTNoMu140_IDTight_v/B");
-    tree -> Branch("HLT_Ele27_WPTight_Gsf_v", &trig_bit_ele27_wptight_gsf, "HLT_Ele27_WPTight_Gsf_v/B");
-    tree -> Branch("HLT_IsoMu24_v", &trig_bit_isomu24, "HLT_IsoMu24_v/B");
-    tree -> Branch("HLT_IsoMu27_v", &trig_bit_isomu27, "HLT_IsoMu27_v/B");
-    tree -> Branch("Flag_HBHENoiseFilter", &trig_bit_flag_HBHENoiseFilter, "Flag_HBHENoiseFilter/B");
-    tree -> Branch("Flag_HBHENoiseIsoFilter", &trig_bit_flag_HBHENoiseIsoFilter, "Flag_HBHENoiseIsoFilter/B");
-    tree -> Branch("Flag_EcalDeadCellTriggerPrimitiveFilter", &trig_bit_flag_EcalDeadCellTriggerPrimitiveFilter, "Flag_EcalDeadCellTriggerPrimitiveFilter/B");
-    tree -> Branch("Flag_goodVertices", &trig_bit_flag_goodVertices, "Flag_goodVertices/B");
-    tree -> Branch("Flag_eeBadScFilter", &trig_bit_flag_eeBadScFilter, "Flag_eeBadScFilter/B");
-    tree -> Branch("Flag_globalSuperTightHalo2016Filter", &trig_bit_flag_globalSuperTightHalo2016Filter, "Flag_globalSuperTightHalo2016Filter/B");
-    tree -> Branch("Flag_BadChCand", &flag_BadChCand, "Flag_BadChCand/B");
-    tree -> Branch("Flag_BadPFMuon", &flag_BadPFMuon, "Flag_BadPFMuon/B");
+
+    //ak4 jets
+    tree -> Branch("Jet1_pt", &jet1_pt, "Jet1_pt/F");
+    tree -> Branch("nTightJets" , &nTightJets , "nTightJets/I");
+    //tree -> Branch("nLooseJets" , &nLooseJets , "nLooseJets/L");
+    
+    //trigger bits    
+    tree -> Branch("HLT_PFMET110_PFMHT110_IDTight_v", &trig_bit_pfmet110_pfmht110, "HLT_PFMET110_PFMHT110_IDTight_v/I");
+    tree -> Branch("HLT_PFMET120_PFMHT120_IDTight_v", &trig_bit_pfmet120_pfmht120, "HLT_PFMET120_PFMHT120_IDTight_v/I");
+    tree -> Branch("HLT_PFMET120_PFMHT120_IDTight_PFHT60_v", &trig_bit_pfmet120_pfmht120_PFHT60, "HLT_PFMET120_PFMHT120_IDTight_PFHT60_v/I");
+    tree -> Branch("HLT_PFMET130_PFMHT130_IDTight_v", &trig_bit_pfmet130_pfmht130, "HLT_PFMET130_PFMHT130_IDTight_v/I");
+    tree -> Branch("HLT_PFMET140_PFMHT140_IDTight_v", &trig_bit_pfmet140_pfmht140, "HLT_PFMET140_PFMHT140_IDTight_v/I");
+    tree -> Branch("HLT_PFMETTypeOne110_PFMHT110_IDTight_v", &trig_bit_pfmetTypeOne110_pfmht110, "HLT_PFMETTypeOne110_PFMHT110_IDTight_v/I");
+    tree -> Branch("HLT_PFMETTypeOne120_PFMHT120_IDTight_v", &trig_bit_pfmetTypeOne120_pfmht120, "HLT_PFMETTypeOne120_PFMHT120_IDTight_v/I");
+    tree -> Branch("HLT_PFMETTypeOne120_PFMHT120_IDTight_PFHT60_v", &trig_bit_pfmetTypeOne120_pfmht120_PFHT60, "HLT_PFMETTypeOne120_PFMHT120_IDTight_PFHT60_v/I");
+    tree -> Branch("HLT_PFMETTypeOne130_PFMHT130_IDTight_v", &trig_bit_pfmetTypeOne130_pfmht130, "HLT_PFMETTypeOne130_PFMHT130_IDTight_v/I");
+    tree -> Branch("HLT_PFMETTypeOne140_PFMHT140_IDTight_v", &trig_bit_pfmetTypeOne140_pfmht140, "HLT_PFMETTypeOne140_PFMHT140_IDTight_v/I");
+    tree -> Branch("HLT_PFMETNoMu110_PFMHTNoMu110_IDTight_v", &trig_bit_pfmetnomu110_pfmhtnomu110, "HLT_PFMETNoMu110_PFMHTNoMu110_IDTight_v/I");
+    tree -> Branch("HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_v", &trig_bit_pfmetnomu120_pfmhtnomu120, "HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_v/I");
+    tree -> Branch("HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_PFHT60_v", &trig_bit_pfmetnomu120_pfmhtnomu120_PFHT60, "HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_PFHT60_v/I");
+    tree -> Branch("HLT_PFMETNoMu130_PFMHTNoMu130_IDTight_v", &trig_bit_pfmetnomu130_pfmhtnomu130, "HLT_PFMETNoMu130_PFMHTNoMu130_IDTight_v/I");
+    tree -> Branch("HLT_PFMETNoMu140_PFMHTNoMu140_IDTight_v", &trig_bit_pfmetnomu140_pfmhtnomu140, "HLT_PFMETNoMu140_PFMHTNoMu140_IDTight_v/I");
+    tree -> Branch("HLT_Ele27_WPTight_Gsf_v", &trig_bit_ele27_wptight_gsf, "HLT_Ele27_WPTight_Gsf_v/I");
+    tree -> Branch("HLT_IsoMu24_v", &trig_bit_isomu24, "HLT_IsoMu24_v/I");
+    tree -> Branch("HLT_IsoMu27_v", &trig_bit_isomu27, "HLT_IsoMu27_v/I");
+    tree -> Branch("HLT_Mu50_v", &trig_bit_mu50, "HLT_Mu50_v/I");
+    tree -> Branch("HLT_PFHT1050_v", &trig_bit_pfht1050, "HLT_PFHT1050_v/I");
+    tree -> Branch("HLT_AK8PFJet400_v", &trig_bit_ak8pfjet400, "HLT_AK8PFJet400_v/I");
+    tree -> Branch("HLT_AK8PFJet450_v", &trig_bit_ak8pfjet450, "HLT_AK8PFJet450_v/I");
+    tree -> Branch("HLT_AK8PFJet500_v", &trig_bit_ak8pfjet500, "HLT_AK8PFJet500_v/I");
+    tree -> Branch("HLT_AK8PFJet550_v", &trig_bit_ak8pfjet400, "HLT_AK8PFJet550_v/I");
+    tree -> Branch("HLT_AK8PFHT750_TrimMass50_v", &trig_bit_ak8pfht750_trimmass50, "HLT_AK8PFHT750_TrimMass50_v/I");
+    tree -> Branch("HLT_AK8PFHT800_TrimMass50_v", &trig_bit_ak8pfht800_trimmass50, "HLT_AK8PFHT800_TrimMass50_v/I");
+    tree -> Branch("HLT_AK8PFHT850_TrimMass50_v", &trig_bit_ak8pfht850_trimmass50, "HLT_AK8PFHT850_TrimMass50_v/I");
+    tree -> Branch("HLT_AK8PFHT900_TrimMass50_v", &trig_bit_ak8pfht900_trimmass50, "HLT_AK8PFHT9000_TrimMass50_v/I");
+    tree -> Branch("HLT_AK8PFJet360_TrimMass30_v", &trig_bit_ak8pfjet360_trimmass30, "HLT_AK8PFJet360_TrimMass30_v/I");
+    tree -> Branch("HLT_AK8PFJet380_TrimMass30_v", &trig_bit_ak8pfjet380_trimmass30, "HLT_AK8PFJet380_TrimMass30_v/I");
+    tree -> Branch("HLT_AK8PFJet400_TrimMass30_v", &trig_bit_ak8pfjet400_trimmass30, "HLT_AK8PFJet400_TrimMass30_v/I");
+    tree -> Branch("HLT_AK8PFJet420_TrimMass30_v", &trig_bit_ak8pfjet420_trimmass30, "HLT_AK8PFJet420_TrimMass30_v/I");
+    
+    //met filters
+    tree -> Branch("Flag_HBHENoiseFilter", &trig_bit_flag_HBHENoiseFilter, "Flag_HBHENoiseFilter/I");
+    tree -> Branch("Flag_HBHENoiseIsoFilter", &trig_bit_flag_HBHENoiseIsoFilter, "Flag_HBHENoiseIsoFilter/I");
+    tree -> Branch("Flag_EcalDeadCellTriggerPrimitiveFilter", &trig_bit_flag_EcalDeadCellTriggerPrimitiveFilter, "Flag_EcalDeadCellTriggerPrimitiveFilter/I");
+    tree -> Branch("Flag_goodVertices", &trig_bit_flag_goodVertices, "Flag_goodVertices/I");
+    tree -> Branch("Flag_eeBadScFilter", &trig_bit_flag_eeBadScFilter, "Flag_eeBadScFilter/I");
+    tree -> Branch("Flag_globalSuperTightHalo2016Filter", &trig_bit_flag_globalSuperTightHalo2016Filter, "Flag_globalSuperTightHalo2016Filter/I");
+    tree -> Branch("Flag_BadChCand", &flag_BadChCand, "Flag_BadChCand/I");
+    tree -> Branch("Flag_BadPFMuon", &flag_BadPFMuon, "Flag_BadPFMuon/I");
+    
+    //muon trigger objects
+    tree -> Branch("mu_trigObj_pt_IsoMu24", &mu_trigObj_pt_IsoMu24, "mu_trigObj_pt_IsoMu24/F"); 
+    tree -> Branch("mu_trigObj_eta_IsoMu24", &mu_trigObj_eta_IsoMu24, "mu_trigObj_eta_IsoMu24/F"); 
+    tree -> Branch("mu_trigObj_phi_IsoMu24", &mu_trigObj_phi_IsoMu24, "mu_trigObj_phi_IsoMu24/F"); 
+    tree -> Branch("mu_trigObj_e_IsoMu24", &mu_trigObj_e_IsoMu24, "mu_trigObj_e_IsoMu24/F"); 
+    tree -> Branch("mu_trigObj_pt_IsoMu27", &mu_trigObj_pt_IsoMu27, "mu_trigObj_pt_IsoMu27/F"); 
+    tree -> Branch("mu_trigObj_eta_IsoMu27", &mu_trigObj_eta_IsoMu27, "mu_trigObj_eta_IsoMu27/F"); 
+    tree -> Branch("mu_trigObj_phi_IsoMu27", &mu_trigObj_phi_IsoMu27, "mu_trigObj_phi_IsoMu27/F"); 
+    tree -> Branch("mu_trigObj_e_IsoMu27", &mu_trigObj_e_IsoMu27, "mu_trigObj_e_IsoMu27/F"); 
+    tree -> Branch("mu_trigObj_pt_Mu50", &mu_trigObj_pt_Mu50, "mu_trigObj_pt_Mu50/F"); 
+    tree -> Branch("mu_trigObj_eta_Mu50", &mu_trigObj_eta_Mu50, "mu_trigObj_eta_Mu50/F"); 
+    tree -> Branch("mu_trigObj_phi_Mu50", &mu_trigObj_phi_Mu50, "mu_trigObj_phi_Mu50/F"); 
+    tree -> Branch("mu_trigObj_e_Mu50", &mu_trigObj_e_Mu50, "mu_trigObj_e_Mu50/F");         
 
 }
 
@@ -271,42 +407,7 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     using namespace reco;
     using namespace std;
 
-    isMC = false;
-    EventNumber = LumiNumber = RunNumber = nPV = 0;
-    nTightMuons = nTightElectrons = nTightFatJets = nLooseMuons = nLooseElectrons = nLooseFatJets = 0;
-
-    trig_bit_pfmet110_pfmht110 = false;
-    trig_bit_pfmet120_pfmht120 = false;
-    trig_bit_pfmet120_pfmht120_PFHT60 = false;
-    trig_bit_pfmet130_pfmht130 = false;
-    trig_bit_pfmet140_pfmht140 = false;
-    trig_bit_pfmetTypeOne110_pfmht110 = false;
-    trig_bit_pfmetTypeOne120_pfmht120 = false;
-    trig_bit_pfmetTypeOne120_pfmht120_PFHT60 = false;
-    trig_bit_pfmetTypeOne130_pfmht130 = false;
-    trig_bit_pfmetTypeOne140_pfmht140 = false;
-    trig_bit_pfmetnomu110_pfmhtnomu110 = false;
-    trig_bit_pfmetnomu120_pfmhtnomu120 = false;
-    trig_bit_pfmetnomu120_pfmhtnomu120_PFHT60 = false;
-    trig_bit_pfmetnomu130_pfmhtnomu130 = false;
-    trig_bit_pfmetnomu140_pfmhtnomu140 = false;
-    trig_bit_ele27_wptight_gsf = false;
-    trig_bit_isomu24 = false;
-    trig_bit_isomu27 = false;
-    trig_bit_flag_HBHENoiseFilter = false;
-    trig_bit_flag_HBHENoiseIsoFilter = false;
-    trig_bit_flag_EcalDeadCellTriggerPrimitiveFilter = false;
-    trig_bit_flag_goodVertices = false;
-    trig_bit_flag_eeBadScFilter = false;
-    trig_bit_flag_globalSuperTightHalo2016Filter = false;
-
-    muon1_pt = 0.;
-    muon1_pfIso04 = -1.;
-    electron1_pt = 0.;
-    muon1_isLoose = muon1_isTight = fatjet1_isLoose = fatjet1_isTight = false;
-    met_pt = met_pt_nomu_L = met_pt_nomu_T = m_ht = m_ht_nomu_L = m_ht_nomu_T = min_met_mht = min_met_mht_nomu_L = min_met_mht_nomu_T = 0.;
-    met_phi = met_phi_nomu_L = met_phi_nomu_T = -10.;
-
+    reset();
 
     //Accessing trigger bits (same as AOD); thanks to Owen Long (SUSY)
     edm::Handle<edm::TriggerResults> trigResults;
@@ -344,11 +445,113 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
               if ( TrigPath.Contains("HLT_Ele27_WPTight_Gsf_v") ) trig_bit_ele27_wptight_gsf = true;
               if ( TrigPath.Contains("HLT_IsoMu24_v") ) trig_bit_isomu24 = true;
               if ( TrigPath.Contains("HLT_IsoMu27_v") ) trig_bit_isomu27 = true;
+              if ( TrigPath.Contains("HLT_Mu50_v") ) trig_bit_mu50 = true;
+ 
+              if ( TrigPath.Contains("HLT_PFHT1050_v") ) trig_bit_pfht1050 = true;             
+              if ( TrigPath.Contains("HLT_AK8PFJet400_v") ) trig_bit_ak8pfjet400 = true;
+              if ( TrigPath.Contains("HLT_AK8PFJet450_v") ) trig_bit_ak8pfjet450 = true;
+              if ( TrigPath.Contains("HLT_AK8PFJet500_v") ) trig_bit_ak8pfjet500 = true;
+              if ( TrigPath.Contains("HLT_AK8PFJet550_v") ) trig_bit_ak8pfjet550 = true;
+              if ( TrigPath.Contains("HLT_AK8PFHT750_TrimMass50_v") ) trig_bit_ak8pfht750_trimmass50 = true;
+              if ( TrigPath.Contains("HLT_AK8PFHT800_TrimMass50_v") ) trig_bit_ak8pfht800_trimmass50 = true;
+              if ( TrigPath.Contains("HLT_AK8PFHT850_TrimMass50_v") ) trig_bit_ak8pfht850_trimmass50 = true;
+              if ( TrigPath.Contains("HLT_AK8PFHT900_TrimMass50_v") ) trig_bit_ak8pfht900_trimmass50 = true;
+              if ( TrigPath.Contains("HLT_AK8PFJet360_TrimMass30_v") ) trig_bit_ak8pfjet360_trimmass30 = true;
+              if ( TrigPath.Contains("HLT_AK8PFJet380_TrimMass30_v") ) trig_bit_ak8pfjet380_trimmass30 = true;
+              if ( TrigPath.Contains("HLT_AK8PFJet400_TrimMass30_v") ) trig_bit_ak8pfjet400_trimmass30 = true;
+              if ( TrigPath.Contains("HLT_AK8PFJet420_TrimMass30_v") ) trig_bit_ak8pfjet420_trimmass30 = true;
+    
            }
         }
     }
 
+    //trigger objects
+    edm::Handle<pat::TriggerObjectStandAloneCollection> triggerObjects;
+    iEvent.getByToken(triggerObjects_,triggerObjects);
+    const edm::TriggerNames& trigNames = iEvent.triggerNames(*trigResults);
+    
+    if( trig_bit_isomu24 || trig_bit_isomu27 || trig_bit_mu50 ){
+     //std::cout << "************* PASSED ISOMU24 " << trig_bit_isomu24 << " OR ISOMU27 " << trig_bit_isomu27 << " OR MU50 " << trig_bit_mu50 << std::endl;
+     
+     for (pat::TriggerObjectStandAlone obj : *triggerObjects) {
+    
+      obj.unpackPathNames(trigNames);
+      obj.unpackFilterLabels(iEvent, *trigResults);
+      std::vector<std::string> pathNamesAll  = obj.pathNames(false);
+     
+      if( trig_bit_isomu24 ){
+       bool pathExist = false;
+       for (unsigned h = 0, n = pathNamesAll.size(); h < n; ++h){
+        if( std::string(pathNamesAll[h]).find("HLT_IsoMu24_v") != std::string::npos ){ /*std::cout << " FOUND ISOMU24 " << pathNamesAll[h] << std::endl;*/ pathExist = true; break; }
+       }//close loop on pathNames;
+       if( pathExist ){
+        //bool filterExist = false;
+        for (unsigned hh = 0; hh < obj.filterLabels().size(); ++hh){
+	 if( filterNames[0] == obj.filterLabels()[hh] ){
+	  //std::cout << " ALSO FOUND FILTER FOR ISOMU24 " << obj.filterLabels()[hh] << std::endl;
+	  mu_trigObj_pt_IsoMu24 = obj.pt();
+	  mu_trigObj_eta_IsoMu24 = obj.eta();
+	  mu_trigObj_phi_IsoMu24 = obj.phi();
+	  mu_trigObj_e_IsoMu24 = obj.energy();
+	  //filterExist = true;
+	  break;
+	 }
+	}//close loop on filter labels of the object
+	//if( filterExist ) break;
+       }//close found path for IsoMu24
+      }//close if Isomu24  
+      
 
+
+      if( trig_bit_isomu27 ){
+       bool pathExist = false;
+       for (unsigned h = 0, n = pathNamesAll.size(); h < n; ++h){
+        if( std::string(pathNamesAll[h]).find("HLT_IsoMu27_v") != std::string::npos ){ /*std::cout << " FOUND ISOMU27 " << pathNamesAll[h] << std::endl;*/ pathExist = true; break; }
+       }//close loop on pathNames;
+       if( pathExist ){
+        //bool filterExist = false;
+        for (unsigned hh = 0; hh < obj.filterLabels().size(); ++hh){
+	 if( filterNames[1] == obj.filterLabels()[hh] ){
+	  //std::cout << " ALSO FOUND FILTER FOR ISOMU27 " << obj.filterLabels()[hh] << std::endl;
+	  mu_trigObj_pt_IsoMu27 = obj.pt();
+	  mu_trigObj_eta_IsoMu27 = obj.eta();
+	  mu_trigObj_phi_IsoMu27 = obj.phi();
+	  mu_trigObj_e_IsoMu27 = obj.energy();
+	  //filterExist = true;
+	  break;
+	 }
+	}//close loop on filter labels of the object
+	//if( filterExist ) break;
+       }//close found path for IsoMu27
+      }//close if Isomu27  
+            
+
+
+      if( trig_bit_mu50 ){
+       bool pathExist = false;
+       for (unsigned h = 0, n = pathNamesAll.size(); h < n; ++h){
+        if( std::string(pathNamesAll[h]).find("HLT_Mu50_v") != std::string::npos ){ /*std::cout << " FOUND Mu50 " << pathNamesAll[h] << std::endl;*/ pathExist = true; break; }
+       }//close loop on pathNames;
+       if( pathExist ){
+        //bool filterExist = false;
+        for (unsigned hh = 0; hh < obj.filterLabels().size(); ++hh){
+	 if( filterNames[2] == obj.filterLabels()[hh] ){
+	  //std::cout << " ALSO FOUND FILTER FOR Mu50 " << obj.filterLabels()[hh] << std::endl;
+	  mu_trigObj_pt_Mu50 = obj.pt();
+	  mu_trigObj_eta_Mu50 = obj.eta();
+	  mu_trigObj_phi_Mu50 = obj.phi();
+	  mu_trigObj_e_Mu50 = obj.energy();
+	  //filterExist = true;
+	  break;
+	 }
+	}//close loop on filter labels of the object
+	//if( filterExist ) break;
+       }//close found path for Mu50
+      }//close if Mu50  
+               
+     }//end loop on objects     
+    }// if one of the muon trigger paths fired --> to save time
+           
     //MET filters
     edm::Handle<edm::TriggerResults> filterResults; 
     iEvent.getByToken(filterResultsToken, filterResults);
@@ -385,6 +588,13 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     EventNumber = iEvent.id().event();
     LumiNumber = iEvent.luminosityBlock();
     RunNumber = iEvent.id().run();
+    
+    /*std::cout << "============================= DONE WITH EVENT " << EventNumber << " LUMI " << LumiNumber << " RUN " << RunNumber << std::endl;
+    std::cout << "CHECK ISOMU24 " << mu_trigObj_pt_IsoMu24 << " " <<  mu_trigObj_eta_IsoMu24 << " " <<  mu_trigObj_phi_IsoMu24 << " " <<  mu_trigObj_e_IsoMu24 << std::endl;
+    std::cout << "CHECK ISOMU27 " << mu_trigObj_pt_IsoMu27 << " " <<  mu_trigObj_eta_IsoMu27 << " " <<  mu_trigObj_phi_IsoMu27 << " " <<  mu_trigObj_e_IsoMu27 << std::endl;
+    std::cout << "CHECK MU50 " << mu_trigObj_pt_Mu50 << " " <<  mu_trigObj_eta_Mu50 << " " <<  mu_trigObj_phi_Mu50 << " " <<  mu_trigObj_e_Mu50 << std::endl;*/
+   
+    //std::cout << " " << mu_trigObj_pt << " " << mu_trigObj_eta << " " << mu_trigObj_phi << " " << mu_trigObj_e << std::endl;
 
     //Initialize met no mu
     float met_pt_nomu_x_L(0.), met_pt_nomu_y_L(0.), met_pt_nomu_x_T(0.), met_pt_nomu_y_T(0.);
@@ -399,8 +609,89 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         vtxPoint = VertexColl->at(0).position();
     }
 
+    /////////////////////////////////////////////////////////////////
+    //Fill muons collection
+    edm::Handle<pat::MuonCollection> muons;
+    iEvent.getByToken( muonToken, muons );
+    
+    for(std::vector<pat::Muon>::const_iterator it=muons->begin(); it!=muons->end(); it++) {
+        pat::Muon m=*it;
+        //if ( m.pt() < 30 ) continue; //this causes a jump at ~30 GeV, investigate
+        if ( fabs( m.eta() ) > 2.4 ) continue; //this selection is necessary
+        muons_N++;
+        muons_pt.push_back(m.pt());
+        muons_eta.push_back(m.eta());
+        muons_phi.push_back(m.phi());
+        muons_e.push_back(m.energy());
+        muons_isLoose.push_back(m.isLooseMuon());
+        muons_isTight.push_back(m.isTightMuon(*vertex));
+        muons_isHighPt.push_back(m.isTightMuon(*vertex));
+	    float pfIso04 = (m.pfIsolationR04().sumChargedHadronPt + std::max(m.pfIsolationR04().sumNeutralHadronEt + m.pfIsolationR04().sumPhotonEt - 0.5*m.pfIsolationR04().sumPUPt, 0.) ) / m.pt();
+        muons_pfIso04.push_back(pfIso04);
+        muons_trkIso.push_back(m.trackIso());
+    }
 
-    //Loop on MET
+    /////////////////////////////////////////////////////////////////
+    //Fill electrons collection 
+    /*edm::Handle<edm::ValueMap<bool> > veto_id_decisions;
+    edm::Handle<edm::ValueMap<bool> > loose_id_decisions;
+    edm::Handle<edm::ValueMap<bool> > medium_id_decisions;
+    edm::Handle<edm::ValueMap<bool> > tight_id_decisions;
+    edm::Handle<edm::ValueMap<bool> > heep_id_decisions;
+    
+    iEvent.getByToken(eleVetoIdMapToken  , veto_id_decisions  );
+    iEvent.getByToken(eleLooseIdMapToken , loose_id_decisions );
+    iEvent.getByToken(eleMediumIdMapToken, medium_id_decisions);
+    iEvent.getByToken(eleTightIdMapToken , tight_id_decisions );
+    iEvent.getByToken(eleHEEPIdMapToken  , heep_id_decisions  );*/
+
+    edm::Handle<edm::View<pat::Electron> > electrons;
+    iEvent.getByToken( electronToken, electrons );
+    
+    for (const pat::Electron &e : *electrons) {
+
+        if ( e.pt() < 30 ) continue;
+        if ( fabs( e.eta() ) > 2.5 ) continue;
+        
+        //const auto el = electrons->ptrAt(eles_N);
+        
+        eles_N++;
+        eles_pt.push_back(e.pt());
+        eles_eta.push_back(e.eta());
+        eles_phi.push_back(e.phi());
+        eles_e.push_back(e.energy());
+        /*eles_isVeto.push_back((*veto_id_decisions)[el]);
+        eles_isLoose.push_back((*loose_id_decisions)[el]);
+        eles_isMedium.push_back((*medium_id_decisions)[el]);
+        eles_isTight.push_back((*tight_id_decisions)[el]);
+        eles_isHeep.push_back((*heep_id_decisions)[el]);*/
+    }
+               
+    /////////////////////////////////////////////////////////////////        
+    //Fill AK8 jets collection
+    edm::Handle<pat::JetCollection> fatjets;
+    iEvent.getByToken( fatjetToken, fatjets );
+    
+    for(std::vector<pat::Jet>::const_iterator it=fatjets->begin(); it!=fatjets->end(); it++) {
+        pat::Jet f=*it;
+        if ( f.pt() < 170 ) continue;
+        if ( fabs( f.eta() ) > 2.5 ) continue;
+        AK8jets_N++;
+        AK8jets_isLoose.push_back(isLooseJet(f));
+        AK8jets_isTight.push_back(isTightJet(f));
+	    AK8jets_pt.push_back(f.pt());
+	    AK8jets_eta.push_back(f.eta());
+	    AK8jets_phi.push_back(f.phi());
+	    AK8jets_m.push_back(f.mass());
+	    AK8jets_e.push_back(f.energy());
+	    AK8jets_softdrop_mass.push_back(f.userFloat("ak8PFJetsPuppiSoftDropMass"));
+	    AK8jets_tau1.push_back(f.userFloat("NjettinessAK8Puppi:tau1"));
+	    AK8jets_tau2.push_back(f.userFloat("NjettinessAK8Puppi:tau2"));
+	    AK8jets_tau3.push_back(f.userFloat("NjettinessAK8Puppi:tau3"));
+    }
+
+    /////////////////////////////////////////////////////////////////
+    //Fill met/mht variables
     edm::Handle<pat::METCollection> MetColl;
     iEvent.getByToken( metToken, MetColl);
     pat::MET met = MetColl->front();
@@ -408,27 +699,6 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     met_phi = met.phi();
     met_pt_nomu_x_L = met_pt_nomu_x_T = met.px();//before summing up muons
     met_pt_nomu_y_L = met_pt_nomu_y_T = met.py();//before summing up muons
-
-    //Loop on AK8 jets
-    edm::Handle<pat::JetCollection> fatjets;
-    iEvent.getByToken( fatjetToken, fatjets );
-    //std::vector<pat::Jet> FatJetVect;
-
-    
-    for(std::vector<pat::Jet>::const_iterator it=fatjets->begin(); it!=fatjets->end(); it++) {
-        pat::Jet f=*it;
-        if ( f.pt() < 170 ) continue;
-	//if ( !isLooseJet(f) ) continue;
-	//fatjet1_isLoose = true;
-        if ( fabs( f.eta() ) > 2.5 ) continue;
-	//nLooseFatJets++;
-	fatjet1_pt = f.pt();
-	if ( !isTightJet(f) ) continue;
-	fatjet1_isTight = true;
-	nTightFatJets++;
-	////FatJetVect.push_back(f);
-    }
-    //annoying JPT error!!!
 
     //Loop on AK4 jets
     edm::Handle<pat::JetCollection> jets;
@@ -443,6 +713,7 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	//if ( !isLooseJet(j) ) continue;
         if ( !isTightJet(j) ) continue;
         if ( j.pt() < 30 ) continue;//this causes a jump at ~30? investigate!
+        if ( fabs( j.eta() ) < 3.0 ) HT+=j.pt();
         if ( fabs( j.eta() ) > 2.5 ) continue;
         //nLooseJets++;
         nTightJets++;
@@ -464,37 +735,24 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     m_ht = sqrt( pow(m_ht_x,2) + pow(m_ht_y,2)  );
     min_met_mht = std::min(met_pt,m_ht);
 
-    //Loop on muons ---> fix
-    edm::Handle<pat::MuonCollection> muons;
-    iEvent.getByToken( muonToken, muons );
-    //std::vector<pat::Muon> MuonVect;
-
-
     //for ( const pat::Muon &m : *muons) {
     for(std::vector<pat::Muon>::const_iterator it=muons->begin(); it!=muons->end(); it++) {
         pat::Muon m=*it;
         //if ( m.pt() < 30 ) continue; //this causes a jump at ~30 GeV, investigate
         if ( fabs( m.eta() ) > 2.4 ) continue; //this selection is necessary
-	if (!m.isLooseMuon()) continue;
-        muon1_isLoose = true;
-	float pfIso04 = (m.pfIsolationR04().sumChargedHadronPt + std::max(m.pfIsolationR04().sumNeutralHadronEt + m.pfIsolationR04().sumPhotonEt - 0.5*m.pfIsolationR04().sumPUPt, 0.) ) / m.pt();
-        //if (pfIso04>0.25) continue; //at least loose isolation: try to drop
-        met_pt_nomu_x_L += m.px();
-        met_pt_nomu_y_L += m.py();
-	m_ht_nomu_x_L += m.px();
-	m_ht_nomu_y_L += m.py();
-	nLooseMuons++;
-        //muon1_isLoose = true;
-	if (!m.isTightMuon(*vertex)) continue;
-        muon1_isTight = true;
-        met_pt_nomu_x_T += m.px();
-        met_pt_nomu_y_T += m.py();
-	m_ht_nomu_x_T += m.px();
-	m_ht_nomu_y_T += m.py();
-	nTightMuons++;
-        //muon1_isTight = true;
- 	muon1_pt = m.pt();
-        muon1_pfIso04 = pfIso04;
+        if(m.isLooseMuon()){
+         met_pt_nomu_x_L += m.px();
+         met_pt_nomu_y_L += m.py();
+	     m_ht_nomu_x_L += m.px();
+	     m_ht_nomu_y_L += m.py();
+	    }
+	    if (m.isTightMuon(*vertex)){
+         met_pt_nomu_x_T += m.px();
+         met_pt_nomu_y_T += m.py();
+	     m_ht_nomu_x_T += m.px();
+	     m_ht_nomu_y_T += m.py();
+	    }
+
 	//MuonVect.push_back(m);
     } // loop over muons, saving only tight muons
 
@@ -507,7 +765,7 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 
     //Loop on electrons ---> fix, missing Electron IDs
-    
+    /*
     edm::InputTag convLabel = edm::InputTag("reducedEgamma:reducedConversions");
     edm::Handle<reco::ConversionCollection> conversions;
     iEvent.getByLabel( convLabel, conversions );
@@ -522,7 +780,7 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     //std::vector<pat::Electron> ElectronVect;
     for(std::vector<pat::Electron>::const_iterator it=electrons->begin(); it!=electrons->end(); it++) {
         pat::Electron e=*it;
-	/*
+	** //
 	GsfElectron::PflowIsolationVariables pfIso = e.pfIsolationVariables();
 	bool isEB = e.isEB() ? true : false;
 	float dEtaIn = e.deltaEtaSuperClusterTrackAtVtx();
@@ -556,18 +814,17 @@ TrigAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	if ( isLoose ) {
   	    std::cout << "LOOSE ele" << std::endl;
 	}
-        */
+        /**
         if ( e.pt() < 30 ) continue;
         if ( fabs( e.eta() ) > 2.5 ) continue;
 	//std::cout << "Electron pt: " << e.pt() << std::endl;
 	electron1_pt = e.pt();
+	electron1_eta = e.eta();
 	//ElectronVect.push_back(e);
     } // loop over electrons
+    */
     
     tree -> Fill();
-
-
-
 
 }
 
@@ -687,6 +944,123 @@ bool TrigAnalyzer::passIDWP(std::string WP, bool isEB, float dEtaIn, float dPhiI
     }
   }
   return pass;
+}
+
+////////////////////////////reset all variables before filling tree/////////////////////////////////////////
+void TrigAnalyzer::reset(void){
+
+    //global variables
+    isMC = false;
+    EventNumber = LumiNumber = RunNumber = nPV = 0;
+    
+    //muons
+    muons_N = 0;
+    muons_pt.clear();
+    muons_eta.clear();
+    muons_phi.clear();
+    muons_e.clear();
+    muons_pfIso04.clear();
+    muons_trkIso.clear();
+    muons_isLoose.clear();
+    muons_isTight.clear();
+    muons_isHighPt.clear();
+    
+    //electrons
+    eles_N = 0;
+    eles_pt.clear();
+    eles_eta.clear();
+    eles_phi.clear();
+    eles_e.clear();
+    eles_isVeto.clear();
+    eles_isLoose.clear();
+    eles_isMedium.clear();
+    eles_isTight.clear();
+    eles_isHeep.clear();
+    
+    //ak4 jets
+    jet1_pt = -9999;
+    nLooseJets = nTightJets = 0;
+    
+    //ak8 jets
+    AK8jets_N = 0;
+    AK8jets_isLoose.clear();
+    AK8jets_isTight.clear();
+    AK8jets_pt.clear();
+    AK8jets_eta.clear();
+    AK8jets_phi.clear();
+    AK8jets_e.clear();
+    AK8jets_m.clear();
+    AK8jets_softdrop_mass.clear();
+    AK8jets_tau1.clear();
+    AK8jets_tau2.clear();
+    AK8jets_tau3.clear();
+    
+    //HT (AK4 CHS tight jets with pT > 30 GeV and |eta| < 3.0)
+    HT = 0;
+    
+    //met/mht
+    met_pt = met_pt_nomu_L = met_pt_nomu_T = m_ht = m_ht_nomu_L = m_ht_nomu_T = min_met_mht = min_met_mht_nomu_L = -9999;
+    min_met_mht_nomu_T = met_phi = met_phi_nomu_L = met_phi_nomu_T = -9999;
+
+    //trigger bits
+    trig_bit_pfmet110_pfmht110 = false;
+    trig_bit_pfmet120_pfmht120 = false;
+    trig_bit_pfmet120_pfmht120_PFHT60 = false;
+    trig_bit_pfmet130_pfmht130 = false;
+    trig_bit_pfmet140_pfmht140 = false;
+    trig_bit_pfmetTypeOne110_pfmht110 = false;
+    trig_bit_pfmetTypeOne120_pfmht120 = false;
+    trig_bit_pfmetTypeOne120_pfmht120_PFHT60 = false;
+    trig_bit_pfmetTypeOne130_pfmht130 = false;
+    trig_bit_pfmetTypeOne140_pfmht140 = false;
+    trig_bit_pfmetnomu110_pfmhtnomu110 = false;
+    trig_bit_pfmetnomu120_pfmhtnomu120 = false;
+    trig_bit_pfmetnomu120_pfmhtnomu120_PFHT60 = false;
+    trig_bit_pfmetnomu130_pfmhtnomu130 = false;
+    trig_bit_pfmetnomu140_pfmhtnomu140 = false;
+    trig_bit_ele27_wptight_gsf = false;
+    trig_bit_isomu24 = false;
+    trig_bit_isomu27 = false;
+    trig_bit_mu50 = false;    
+    trig_bit_pfht1050 = false;
+    trig_bit_ak8pfjet400 = false;
+    trig_bit_ak8pfjet450 = false;
+    trig_bit_ak8pfjet500 = false;
+    trig_bit_ak8pfjet550 = false;
+    trig_bit_ak8pfht750_trimmass50 = false;
+    trig_bit_ak8pfht800_trimmass50 = false;
+    trig_bit_ak8pfht850_trimmass50 = false;
+    trig_bit_ak8pfht900_trimmass50 = false;
+    trig_bit_ak8pfjet360_trimmass30 = false;
+    trig_bit_ak8pfjet380_trimmass30 = false;
+    trig_bit_ak8pfjet400_trimmass30 = false;
+    trig_bit_ak8pfjet420_trimmass30 = false;        
+    //L1 bits
+    trig_bit_hltMHT90 = false;
+    trig_bit_hltL1sAllETMHFSeeds = false;
+    trig_bit_hltL1sAllETMHadSeeds = false;
+    trig_bit_hltMETClean80 = false;
+    trig_bit_hltMET90 = false;
+    trig_bit_hltPFMHTNoMuTightID120 = false;
+    trig_bit_hltPFMETNoMu120 = false;
+    trig_bit_hltL1sAllETMHFHTT60Seeds = false;
+    trig_bit_hltPFHTJet30 = false;
+    trig_bit_hltPFHT60Jet30 = false;
+    //MET filters
+    trig_bit_flag_HBHENoiseFilter = false;
+    trig_bit_flag_HBHENoiseIsoFilter = false;
+    trig_bit_flag_EcalDeadCellTriggerPrimitiveFilter = false;
+    trig_bit_flag_goodVertices = false;
+    trig_bit_flag_eeBadScFilter = false;
+    trig_bit_flag_globalSuperTightHalo2016Filter = false;
+    flag_BadChCand = false;
+    flag_BadPFMuon = false;
+
+    //muon trigger objects
+    mu_trigObj_pt_IsoMu24 = mu_trigObj_eta_IsoMu24 = mu_trigObj_phi_IsoMu24 = mu_trigObj_e_IsoMu24 = -9999;
+    mu_trigObj_pt_IsoMu27 = mu_trigObj_eta_IsoMu27 = mu_trigObj_phi_IsoMu27 = mu_trigObj_e_IsoMu27 = -9999;
+    mu_trigObj_pt_Mu50 = mu_trigObj_eta_Mu50 = mu_trigObj_phi_Mu50 = mu_trigObj_e_Mu50 = -9999;
+            
 }
 
 

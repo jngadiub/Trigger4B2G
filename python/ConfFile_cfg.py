@@ -9,13 +9,15 @@ process = cms.Process("Trigger")
 
 process.load("FWCore.MessageService.MessageLogger_cfi")
 process.MessageLogger.cerr.threshold = 'ERROR'
+process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 
 process.source = cms.Source("PoolSource",
     # replace 'myfile.root' with the source file you want to use
     fileNames = cms.untracked.vstring(
-        '/store/data/Run2018A/SingleMuon/MINIAOD/PromptReco-v2/000/316/239/00000/285EF140-4059-E811-8950-FA163E4D9C0E.root'
+        #'/store/data/Run2018A/SingleMuon/MINIAOD/PromptReco-v2/000/316/239/00000/285EF140-4059-E811-8950-FA163E4D9C0E.root'
+	'file:test.root'
     )
 )
 
