@@ -30,6 +30,51 @@ def passMETfilters(tree):
  if not tree.Flag_BadPFMuon: return False
  return True
 
+def get_mu_trigObj(tree,which=""):
+
+  #print tree.HLT_IsoMu24_v,tree.HLT_IsoMu27_v,tree.HLT_Mu50_v
+  #print tree.mu_trigObj_pt_IsoMu24,tree.mu_trigObj_eta_IsoMu24,tree.mu_trigObj_phi_IsoMu24,tree.mu_trigObj_e_IsoMu24
+  #print tree.mu_trigObj_pt_IsoMu27,tree.mu_trigObj_eta_IsoMu27,tree.mu_trigObj_phi_IsoMu27,tree.mu_trigObj_e_IsoMu27
+  #print tree.mu_trigObj_pt_Mu50,tree.mu_trigObj_eta_Mu50,tree.mu_trigObj_phi_Mu50,tree.mu_trigObj_e_Mu50
+  
+  tlv = 0
+  
+  if which=="IsoMu24_OR_IsoMu27_OR_Mu50":
+  
+   if tree.HLT_Mu50_v:
+    if tree.mu_trigObj_pt_Mu50 != -9999:
+     tlv = ROOT.TLorentzVector()
+     tlv.SetPtEtaPhiE(tree.mu_trigObj_pt_Mu50,tree.mu_trigObj_eta_Mu50,tree.mu_trigObj_phi_Mu50,tree.mu_trigObj_e_Mu50) 
+     return tlv
+  
+   if tree.HLT_IsoMu27_v:      
+    if tree.mu_trigObj_pt_IsoMu27 != -9999:
+     tlv = ROOT.TLorentzVector()
+     tlv.SetPtEtaPhiE(tree.mu_trigObj_pt_IsoMu27,tree.mu_trigObj_eta_IsoMu27,tree.mu_trigObj_phi_IsoMu27,tree.mu_trigObj_e_IsoMu27) 
+     return tlv
+     
+   if tree.HLT_IsoMu24_v:     
+    if tree.mu_trigObj_pt_IsoMu24 != -9999:
+     tlv = ROOT.TLorentzVector()
+     tlv.SetPtEtaPhiE(tree.mu_trigObj_pt_IsoMu24,tree.mu_trigObj_eta_IsoMu24,tree.mu_trigObj_phi_IsoMu24,tree.mu_trigObj_e_IsoMu24)
+     return tlv
+  
+  elif which=="IsoMu24_OR_IsoMu27":
+
+   if tree.HLT_IsoMu27_v:      
+    if tree.mu_trigObj_pt_IsoMu27 != -9999:
+     tlv = ROOT.TLorentzVector()
+     tlv.SetPtEtaPhiE(tree.mu_trigObj_pt_IsoMu27,tree.mu_trigObj_eta_IsoMu27,tree.mu_trigObj_phi_IsoMu27,tree.mu_trigObj_e_IsoMu27) 
+     return tlv
+     
+   if tree.HLT_IsoMu24_v:     
+    if tree.mu_trigObj_pt_IsoMu24 != -9999:
+     tlv = ROOT.TLorentzVector()
+     tlv.SetPtEtaPhiE(tree.mu_trigObj_pt_IsoMu24,tree.mu_trigObj_eta_IsoMu24,tree.mu_trigObj_phi_IsoMu24,tree.mu_trigObj_e_IsoMu24)
+     return tlv                
+
+  return tlv       
+
 
 parser = OptionParser()
 parser.add_option('-f','--filelist',action='store',type='string',dest='filelist',default='list.txt', help='file list')
@@ -70,6 +115,72 @@ mjet2_num_pfjet400_trimmass30 = ROOT.TH1F('mjet2_num_HLT_AK8PFJet400_TrimMass30'
 mjet2_num_pfht800_trimmass50 = ROOT.TH1F('mjet2_num_HLT_AK8PFHT800_TrimMass50','mjet2_num_HLT_AK8PFHT800_TrimMass50',50,0,250)
 mjet2_num_all_triggers = ROOT.TH1F('mjet2_num_all_triggers','mjet2_num_all_triggers',50,0,250)    
 
+mjj_den_eta1p3 = ROOT.TH1F('mjj_den_eta1p3','mjj_den_eta1p3',82,array('f',binning))
+
+mjj_num_eta1p3_pfht1050 = ROOT.TH1F('mjj_num_eta1p3_HLT_PFHT1050','mjj_num_eta1p3_HLT_PFHT1050',82,array('f',binning))
+mjj_num_eta1p3_pfjet500 = ROOT.TH1F('mjj_num_eta1p3_HLT_AK8PFJet500','mjj_num_eta1p3_HLT_AK8PFJet500',82,array('f',binning))
+mjj_num_eta1p3_pfjet400_trimmass30 = ROOT.TH1F('mjj_num_eta1p3_HLT_AK8PFJet400_TrimMass30','mjj_num_eta1p3_HLT_AK8PFJet400_TrimMass300',82,array('f',binning))    
+mjj_num_eta1p3_pfht800_trimmass50 = ROOT.TH1F('mjj_num_eta1p3_HLT_AK8PFHT800_TrimMass50','mjj_num_eta1p3_HLT_AK8PFHT800_TrimMass50',82,array('f',binning))
+mjj_num_eta1p3_all_triggers = ROOT.TH1F('mjj_num_eta1p3_all_triggers','mjj_num_eta1p3_all_triggers',82,array('f',binning))    
+
+mjet1_den_eta1p3 = ROOT.TH1F('mjet1_den_eta1p3','mjet1_den_eta1p3',50,0,250)
+mjet1_num_eta1p3_pfht1050 = ROOT.TH1F('mjet1_num_eta1p3_HLT_PFHT1050','mjet1_num_eta1p3_HLT_PFHT1050',50,0,250)
+mjet1_num_eta1p3_pfjet500 = ROOT.TH1F('mjet1_num_eta1p3_HLT_AK8PFJet500','mjet1_num_eta1p3_HLT_AK8PFJet500',50,0,250)
+mjet1_num_eta1p3_pfjet400_trimmass30 = ROOT.TH1F('mjet1_num_eta1p3_HLT_AK8PFJet400_TrimMass30','mjet1_num_eta1p3_HLT_AK8PFJet400_TrimMass30',50,0,250)
+mjet1_num_eta1p3_pfht800_trimmass50 = ROOT.TH1F('mjet1_num_eta1p3_HLT_AK8PFHT800_TrimMass50','mjet1_num_eta1p3_HLT_AK8PFHT800_TrimMass50',50,0,250)
+mjet1_num_eta1p3_all_triggers = ROOT.TH1F('mjet1_num_eta1p3_all_triggers','mjet1_num_eta1p3_all_triggers',50,0,250)    
+
+mjet2_den_eta1p3 = ROOT.TH1F('mjet2_den_eta1p3','mjet2_den_eta1p3',50,0,250)
+mjet2_num_eta1p3_pfht1050 = ROOT.TH1F('mjet2_num_eta1p3_HLT_PFHT1050','mjet2_num_eta1p3_HLT_PFHT1050',50,0,250)
+mjet2_num_eta1p3_pfjet500 = ROOT.TH1F('mjet2_num_eta1p3_HLT_AK8PFJet500','mjet2_num_eta1p3_HLT_AK8PFJet500',50,0,250)
+mjet2_num_eta1p3_pfjet400_trimmass30 = ROOT.TH1F('mjet2_num_eta1p3_HLT_AK8PFJet400_TrimMass30','mjet2_num_eta1p3_HLT_AK8PFJet400_TrimMass30',50,0,250)
+mjet2_num_eta1p3_pfht800_trimmass50 = ROOT.TH1F('mjet2_num_eta1p3_HLT_AK8PFHT800_TrimMass50','mjet2_num_eta1p3_HLT_AK8PFHT800_TrimMass50',50,0,250)
+mjet2_num_eta1p3_all_triggers = ROOT.TH1F('mjet2_num_eta1p3_all_triggers','mjet2_num_eta1p3_all_triggers',50,0,250) 
+
+mjj_den_eta1p7 = ROOT.TH1F('mjj_den_eta1p7','mjj_den_eta1p7',82,array('f',binning))
+
+mjj_num_eta1p7_pfht1050 = ROOT.TH1F('mjj_num_eta1p7_HLT_PFHT1050','mjj_num_eta1p7_HLT_PFHT1050',82,array('f',binning))
+mjj_num_eta1p7_pfjet500 = ROOT.TH1F('mjj_num_eta1p7_HLT_AK8PFJet500','mjj_num_eta1p7_HLT_AK8PFJet500',82,array('f',binning))
+mjj_num_eta1p7_pfjet400_trimmass30 = ROOT.TH1F('mjj_num_eta1p7_HLT_AK8PFJet400_TrimMass30','mjj_num_eta1p7_HLT_AK8PFJet400_TrimMass300',82,array('f',binning))    
+mjj_num_eta1p7_pfht800_trimmass50 = ROOT.TH1F('mjj_num_eta1p7_HLT_AK8PFHT800_TrimMass50','mjj_num_eta1p7_HLT_AK8PFHT800_TrimMass50',82,array('f',binning))
+mjj_num_eta1p7_all_triggers = ROOT.TH1F('mjj_num_eta1p7_all_triggers','mjj_num_eta1p7_all_triggers',82,array('f',binning))    
+
+mjet1_den_eta1p7 = ROOT.TH1F('mjet1_den_eta1p7','mjet1_den_eta1p7',50,0,250)
+mjet1_num_eta1p7_pfht1050 = ROOT.TH1F('mjet1_num_eta1p7_HLT_PFHT1050','mjet1_num_eta1p7_HLT_PFHT1050',50,0,250)
+mjet1_num_eta1p7_pfjet500 = ROOT.TH1F('mjet1_num_eta1p7_HLT_AK8PFJet500','mjet1_num_eta1p7_HLT_AK8PFJet500',50,0,250)
+mjet1_num_eta1p7_pfjet400_trimmass30 = ROOT.TH1F('mjet1_num_eta1p7_HLT_AK8PFJet400_TrimMass30','mjet1_num_eta1p7_HLT_AK8PFJet400_TrimMass30',50,0,250)
+mjet1_num_eta1p7_pfht800_trimmass50 = ROOT.TH1F('mjet1_num_eta1p7_HLT_AK8PFHT800_TrimMass50','mjet1_num_eta1p7_HLT_AK8PFHT800_TrimMass50',50,0,250)
+mjet1_num_eta1p7_all_triggers = ROOT.TH1F('mjet1_num_eta1p7_all_triggers','mjet1_num_eta1p7_all_triggers',50,0,250)    
+
+mjet2_den_eta1p7 = ROOT.TH1F('mjet2_den_eta1p7','mjet2_den_eta1p7',50,0,250)
+mjet2_num_eta1p7_pfht1050 = ROOT.TH1F('mjet2_num_eta1p7_HLT_PFHT1050','mjet2_num_eta1p7_HLT_PFHT1050',50,0,250)
+mjet2_num_eta1p7_pfjet500 = ROOT.TH1F('mjet2_num_eta1p7_HLT_AK8PFJet500','mjet2_num_eta1p7_HLT_AK8PFJet500',50,0,250)
+mjet2_num_eta1p7_pfjet400_trimmass30 = ROOT.TH1F('mjet2_num_eta1p7_HLT_AK8PFJet400_TrimMass30','mjet2_num_eta1p7_HLT_AK8PFJet400_TrimMass30',50,0,250)
+mjet2_num_eta1p7_pfht800_trimmass50 = ROOT.TH1F('mjet2_num_eta1p7_HLT_AK8PFHT800_TrimMass50','mjet2_num_eta1p7_HLT_AK8PFHT800_TrimMass50',50,0,250)
+mjet2_num_eta1p7_all_triggers = ROOT.TH1F('mjet2_num_eta1p7_all_triggers','mjet2_num_eta1p7_all_triggers',50,0,250) 
+
+mjj_den_eta2p4 = ROOT.TH1F('mjj_den_eta2p4','mjj_den_eta2p4',82,array('f',binning))
+
+mjj_num_eta2p4_pfht1050 = ROOT.TH1F('mjj_num_eta2p4_HLT_PFHT1050','mjj_num_eta2p4_HLT_PFHT1050',82,array('f',binning))
+mjj_num_eta2p4_pfjet500 = ROOT.TH1F('mjj_num_eta2p4_HLT_AK8PFJet500','mjj_num_eta2p4_HLT_AK8PFJet500',82,array('f',binning))
+mjj_num_eta2p4_pfjet400_trimmass30 = ROOT.TH1F('mjj_num_eta2p4_HLT_AK8PFJet400_TrimMass30','mjj_num_eta2p4_HLT_AK8PFJet400_TrimMass300',82,array('f',binning))    
+mjj_num_eta2p4_pfht800_trimmass50 = ROOT.TH1F('mjj_num_eta2p4_HLT_AK8PFHT800_TrimMass50','mjj_num_eta2p4_HLT_AK8PFHT800_TrimMass50',82,array('f',binning))
+mjj_num_eta2p4_all_triggers = ROOT.TH1F('mjj_num_eta2p4_all_triggers','mjj_num_eta2p4_all_triggers',82,array('f',binning))    
+
+mjet1_den_eta2p4 = ROOT.TH1F('mjet1_den_eta2p4','mjet1_den_eta2p4',50,0,250)
+mjet1_num_eta2p4_pfht1050 = ROOT.TH1F('mjet1_num_eta2p4_HLT_PFHT1050','mjet1_num_eta2p4_HLT_PFHT1050',50,0,250)
+mjet1_num_eta2p4_pfjet500 = ROOT.TH1F('mjet1_num_eta2p4_HLT_AK8PFJet500','mjet1_num_eta2p4_HLT_AK8PFJet500',50,0,250)
+mjet1_num_eta2p4_pfjet400_trimmass30 = ROOT.TH1F('mjet1_num_eta2p4_HLT_AK8PFJet400_TrimMass30','mjet1_num_eta2p4_HLT_AK8PFJet400_TrimMass30',50,0,250)
+mjet1_num_eta2p4_pfht800_trimmass50 = ROOT.TH1F('mjet1_num_eta2p4_HLT_AK8PFHT800_TrimMass50','mjet1_num_eta2p4_HLT_AK8PFHT800_TrimMass50',50,0,250)
+mjet1_num_eta2p4_all_triggers = ROOT.TH1F('mjet1_num_eta2p4_all_triggers','mjet1_num_eta2p4_all_triggers',50,0,250)    
+
+mjet2_den_eta2p4 = ROOT.TH1F('mjet2_den_eta2p4','mjet2_den_eta2p4',50,0,250)
+mjet2_num_eta2p4_pfht1050 = ROOT.TH1F('mjet2_num_eta2p4_HLT_PFHT1050','mjet2_num_eta2p4_HLT_PFHT1050',50,0,250)
+mjet2_num_eta2p4_pfjet500 = ROOT.TH1F('mjet2_num_eta2p4_HLT_AK8PFJet500','mjet2_num_eta2p4_HLT_AK8PFJet500',50,0,250)
+mjet2_num_eta2p4_pfjet400_trimmass30 = ROOT.TH1F('mjet2_num_eta2p4_HLT_AK8PFJet400_TrimMass30','mjet2_num_eta2p4_HLT_AK8PFJet400_TrimMass30',50,0,250)
+mjet2_num_eta2p4_pfht800_trimmass50 = ROOT.TH1F('mjet2_num_eta2p4_HLT_AK8PFHT800_TrimMass50','mjet2_num_eta2p4_HLT_AK8PFHT800_TrimMass50',50,0,250)
+mjet2_num_eta2p4_all_triggers = ROOT.TH1F('mjet2_num_eta2p4_all_triggers','mjet2_num_eta2p4_all_triggers',50,0,250)  
+
 nfiles = len(files)
 countf = 0 
 for f in files:
@@ -89,6 +200,20 @@ for f in files:
   if t.HLT_IsoMu24_v or t.HLT_IsoMu27_v or t.HLT_Mu50_v: passReference = True
   if not passReference: continue
 
+  tlv_trigObj = get_mu_trigObj(t,"IsoMu24_OR_IsoMu27_OR_Mu50")
+  tlv_m = 0 
+  
+  if tlv_trigObj:  
+   dr_best = 9999
+   for m in range(t.muons_N):
+   
+    tmp_v = ROOT.TLorentzVector()
+    tmp_v.SetPtEtaPhiE(t.muons_pt[m],t.muons_eta[m],t.muons_phi[m],t.muons_e[m])
+    tmp_dr = tmp_v.DeltaR(tlv_trigObj)
+    if tmp_dr <= dr_best:
+     dr_best = tmp_dr
+     tlv_m = ROOT.TLorentzVector(tmp_v)
+     
   if t.AK8jets_N < 2: continue
   
   dijet = []
@@ -103,6 +228,7 @@ for f in files:
    tlv_j = ROOT.TLorentzVector()
    tlv_j.SetPtEtaPhiE(t.AK8jets_pt[j],t.AK8jets_eta[j],t.AK8jets_phi[j],t.AK8jets_e[j])
    
+   '''
    tlv_m = 0   
    for m in range(t.muons_N):
    
@@ -113,7 +239,8 @@ for f in files:
     tlv_m = ROOT.TLorentzVector()
     tlv_m.SetPtEtaPhiE(t.muons_pt[m],t.muons_eta[m],t.muons_phi[m],t.muons_e[m])
     break
-  
+   '''
+   
    if tlv_m and tlv_m.DeltaR(tlv_j) < 0.8: continue
    
    dijet.append(tlv_j)
@@ -127,16 +254,45 @@ for f in files:
   
   #fill mjj histos
   if t.AK8jets_softdrop_mass[j_index[0]] > 55 and t.AK8jets_softdrop_mass[j_index[1]] > 55:
-    
+       
    mjj_den.Fill(mjj)
     
    if t.HLT_PFHT1050_v: mjj_num_pfht1050.Fill(mjj) 
    if t.HLT_AK8PFJet500_v: mjj_num_pfjet500.Fill(mjj)
    if t.HLT_AK8PFJet400_TrimMass30_v: mjj_num_pfjet400_trimmass30.Fill(mjj)
    if t.HLT_AK8PFHT800_TrimMass50_v: mjj_num_pfht800_trimmass50.Fill(mjj)
-   if t.HLT_PFHT1050_v or t.HLT_AK8PFJet500_v or t.HLT_AK8PFJet400_TrimMass30_v or t.HLT_AK8PFHT800_TrimMass50_v:
-    mjj_num_all_triggers.Fill(mjj)
-            
+   if t.HLT_PFHT1050_v or t.HLT_AK8PFJet500_v or t.HLT_AK8PFJet400_TrimMass30_v or t.HLT_AK8PFHT800_TrimMass50_v: mjj_num_all_triggers.Fill(mjj)
+   
+   if math.fabs(dijet[0].Eta()) < 1.3 and math.fabs(dijet[1].Eta()) < 1.3:
+
+    mjj_den_eta1p3.Fill(mjj)
+    
+    if t.HLT_PFHT1050_v: mjj_num_eta1p3_pfht1050.Fill(mjj) 
+    if t.HLT_AK8PFJet500_v: mjj_num_eta1p3_pfjet500.Fill(mjj)
+    if t.HLT_AK8PFJet400_TrimMass30_v: mjj_num_eta1p3_pfjet400_trimmass30.Fill(mjj)
+    if t.HLT_AK8PFHT800_TrimMass50_v: mjj_num_eta1p3_pfht800_trimmass50.Fill(mjj)
+    if t.HLT_PFHT1050_v or t.HLT_AK8PFJet500_v or t.HLT_AK8PFJet400_TrimMass30_v or t.HLT_AK8PFHT800_TrimMass50_v: mjj_num_eta1p3_all_triggers.Fill(mjj)
+
+   if math.fabs(dijet[0].Eta()) > 1.3 and math.fabs(dijet[1].Eta()) > 1.3 and math.fabs(dijet[0].Eta()) < 1.7 and math.fabs(dijet[1].Eta()) < 1.7:
+
+    mjj_den_eta1p7.Fill(mjj)
+    
+    if t.HLT_PFHT1050_v: mjj_num_eta1p7_pfht1050.Fill(mjj) 
+    if t.HLT_AK8PFJet500_v: mjj_num_eta1p7_pfjet500.Fill(mjj)
+    if t.HLT_AK8PFJet400_TrimMass30_v: mjj_num_eta1p7_pfjet400_trimmass30.Fill(mjj)
+    if t.HLT_AK8PFHT800_TrimMass50_v: mjj_num_eta1p7_pfht800_trimmass50.Fill(mjj)
+    if t.HLT_PFHT1050_v or t.HLT_AK8PFJet500_v or t.HLT_AK8PFJet400_TrimMass30_v or t.HLT_AK8PFHT800_TrimMass50_v: mjj_num_eta1p7_all_triggers.Fill(mjj)      
+
+   if math.fabs(dijet[0].Eta()) > 1.7 and math.fabs(dijet[1].Eta()) > 1.7 and math.fabs(dijet[0].Eta()) < 2.4 and math.fabs(dijet[1].Eta()) < 2.4:
+
+    mjj_den_eta2p4.Fill(mjj)
+    
+    if t.HLT_PFHT1050_v: mjj_num_eta2p4_pfht1050.Fill(mjj) 
+    if t.HLT_AK8PFJet500_v: mjj_num_eta2p4_pfjet500.Fill(mjj)
+    if t.HLT_AK8PFJet400_TrimMass30_v: mjj_num_eta2p4_pfjet400_trimmass30.Fill(mjj)
+    if t.HLT_AK8PFHT800_TrimMass50_v: mjj_num_eta2p4_pfht800_trimmass50.Fill(mjj)
+    if t.HLT_PFHT1050_v or t.HLT_AK8PFJet500_v or t.HLT_AK8PFJet400_TrimMass30_v or t.HLT_AK8PFHT800_TrimMass50_v: mjj_num_eta2p4_all_triggers.Fill(mjj) 
+                
   #fill mjet histos     
   if mjj>1200:
   
@@ -162,8 +318,82 @@ for f in files:
    if t.HLT_PFHT1050_v or t.HLT_AK8PFJet500_v or t.HLT_AK8PFJet400_TrimMass30_v or t.HLT_AK8PFHT800_TrimMass50_v:
     mjet1_num_all_triggers.Fill(t.AK8jets_softdrop_mass[j_index[0]])
     mjet2_num_all_triggers.Fill(t.AK8jets_softdrop_mass[j_index[1]])
-   
+    
+   if math.fabs(dijet[0].Eta()) < 1.3 and math.fabs(dijet[1].Eta()) < 1.3: 
 
+    mjet1_den_eta1p3.Fill(t.AK8jets_softdrop_mass[j_index[0]])
+    mjet2_den_eta1p3.Fill(t.AK8jets_softdrop_mass[j_index[1]])
+    
+    if t.HLT_PFHT1050_v:
+     mjet1_num_eta1p3_pfht1050.Fill(t.AK8jets_softdrop_mass[j_index[0]]) 
+     mjet2_num_eta1p3_pfht1050.Fill(t.AK8jets_softdrop_mass[j_index[1]])   
+ 
+    if t.HLT_AK8PFJet500_v:
+     mjet1_num_eta1p3_pfjet500.Fill(t.AK8jets_softdrop_mass[j_index[0]])
+     mjet2_num_eta1p3_pfjet500.Fill(t.AK8jets_softdrop_mass[j_index[1]])     
+
+    if t.HLT_AK8PFJet400_TrimMass30_v:
+     mjet1_num_eta1p3_pfjet400_trimmass30.Fill(t.AK8jets_softdrop_mass[j_index[0]])
+     mjet2_num_eta1p3_pfjet400_trimmass30.Fill(t.AK8jets_softdrop_mass[j_index[1]])
+
+    if t.HLT_AK8PFHT800_TrimMass50_v:
+     mjet1_num_eta1p3_pfht800_trimmass50.Fill(t.AK8jets_softdrop_mass[j_index[0]])
+     mjet2_num_eta1p3_pfht800_trimmass50.Fill(t.AK8jets_softdrop_mass[j_index[1]])
+
+    if t.HLT_PFHT1050_v or t.HLT_AK8PFJet500_v or t.HLT_AK8PFJet400_TrimMass30_v or t.HLT_AK8PFHT800_TrimMass50_v:
+     mjet1_num_eta1p3_all_triggers.Fill(t.AK8jets_softdrop_mass[j_index[0]])
+     mjet2_num_eta1p3_all_triggers.Fill(t.AK8jets_softdrop_mass[j_index[1]])   
+
+   if math.fabs(dijet[0].Eta()) > 1.3 and math.fabs(dijet[1].Eta()) > 1.3 and math.fabs(dijet[0].Eta()) < 1.7 and math.fabs(dijet[1].Eta()) < 1.7: 
+
+    mjet1_den_eta1p7.Fill(t.AK8jets_softdrop_mass[j_index[0]])
+    mjet2_den_eta1p7.Fill(t.AK8jets_softdrop_mass[j_index[1]])
+    
+    if t.HLT_PFHT1050_v:
+     mjet1_num_eta1p7_pfht1050.Fill(t.AK8jets_softdrop_mass[j_index[0]]) 
+     mjet2_num_eta1p7_pfht1050.Fill(t.AK8jets_softdrop_mass[j_index[1]])   
+ 
+    if t.HLT_AK8PFJet500_v:
+     mjet1_num_eta1p7_pfjet500.Fill(t.AK8jets_softdrop_mass[j_index[0]])
+     mjet2_num_eta1p7_pfjet500.Fill(t.AK8jets_softdrop_mass[j_index[1]])     
+
+    if t.HLT_AK8PFJet400_TrimMass30_v:
+     mjet1_num_eta1p7_pfjet400_trimmass30.Fill(t.AK8jets_softdrop_mass[j_index[0]])
+     mjet2_num_eta1p7_pfjet400_trimmass30.Fill(t.AK8jets_softdrop_mass[j_index[1]])
+
+    if t.HLT_AK8PFHT800_TrimMass50_v:
+     mjet1_num_eta1p7_pfht800_trimmass50.Fill(t.AK8jets_softdrop_mass[j_index[0]])
+     mjet2_num_eta1p7_pfht800_trimmass50.Fill(t.AK8jets_softdrop_mass[j_index[1]])
+
+    if t.HLT_PFHT1050_v or t.HLT_AK8PFJet500_v or t.HLT_AK8PFJet400_TrimMass30_v or t.HLT_AK8PFHT800_TrimMass50_v:
+     mjet1_num_eta1p7_all_triggers.Fill(t.AK8jets_softdrop_mass[j_index[0]])
+     mjet2_num_eta1p7_all_triggers.Fill(t.AK8jets_softdrop_mass[j_index[1]])  
+
+   if math.fabs(dijet[0].Eta()) > 1.7 and math.fabs(dijet[1].Eta()) > 1.7 and math.fabs(dijet[0].Eta()) < 2.4 and math.fabs(dijet[1].Eta()) < 2.4: 
+
+    mjet1_den_eta2p4.Fill(t.AK8jets_softdrop_mass[j_index[0]])
+    mjet2_den_eta2p4.Fill(t.AK8jets_softdrop_mass[j_index[1]])
+    
+    if t.HLT_PFHT1050_v:
+     mjet1_num_eta2p4_pfht1050.Fill(t.AK8jets_softdrop_mass[j_index[0]]) 
+     mjet2_num_eta2p4_pfht1050.Fill(t.AK8jets_softdrop_mass[j_index[1]])   
+ 
+    if t.HLT_AK8PFJet500_v:
+     mjet1_num_eta2p4_pfjet500.Fill(t.AK8jets_softdrop_mass[j_index[0]])
+     mjet2_num_eta2p4_pfjet500.Fill(t.AK8jets_softdrop_mass[j_index[1]])     
+
+    if t.HLT_AK8PFJet400_TrimMass30_v:
+     mjet1_num_eta2p4_pfjet400_trimmass30.Fill(t.AK8jets_softdrop_mass[j_index[0]])
+     mjet2_num_eta2p4_pfjet400_trimmass30.Fill(t.AK8jets_softdrop_mass[j_index[1]])
+
+    if t.HLT_AK8PFHT800_TrimMass50_v:
+     mjet1_num_eta2p4_pfht800_trimmass50.Fill(t.AK8jets_softdrop_mass[j_index[0]])
+     mjet2_num_eta2p4_pfht800_trimmass50.Fill(t.AK8jets_softdrop_mass[j_index[1]])
+
+    if t.HLT_PFHT1050_v or t.HLT_AK8PFJet500_v or t.HLT_AK8PFJet400_TrimMass30_v or t.HLT_AK8PFHT800_TrimMass50_v:
+     mjet1_num_eta2p4_all_triggers.Fill(t.AK8jets_softdrop_mass[j_index[0]])
+     mjet2_num_eta2p4_all_triggers.Fill(t.AK8jets_softdrop_mass[j_index[1]])      
+      
  tf.Close()
  
 print "Tot. passed:",mjj_den.Integral()
